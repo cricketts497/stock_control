@@ -2,13 +2,16 @@ import PyQt5.QtWidgets as widgets
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QIntValidator
+import pandas as pd
 
 class Item(QObject):
+    NO_ITEM = 0
     get_item_signal = Signal(int, int)
     def __init__(self, item_number):
         super().__init__()
     
-        self.item_number = 0
+        self.item_number = self.NO_ITEM
+        self.item = pd.Series()
     
         self.layout = widgets.QHBoxLayout()
         
@@ -44,5 +47,22 @@ class Item(QObject):
         self.item_number = item_number
         self.get_item_signal.emit(self.item_index, item_number)
     
-    def set_description(self, description):
+    def set_item(self, item):
+        self.item = item
+
+        #set the description QLabel
+        if len(item) > 0:
+            description = '{0} \nPrice: £{1:.2f}'.format(item.loc['description'], item.loc['price'])
+        else:
+            description = 'Not found'
         self.describe_label.setText(description)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
