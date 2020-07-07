@@ -39,18 +39,14 @@ class Item(QObject):
         
         #item id
         self.item_id_edit = widgets.QLineEdit()
-        # self.item_id_edit.setFixedHeight(self.EDIT_HEIGHT)
-        # self.item_id_edit.setValidator(onlyInt)
         #when the editing is finished, emit a signal from self to get the parent to find and set the item
         self.item_id_edit.editingFinished.connect(self.get_item)
         
         #quantity
         self.quantityEdit = widgets.QLineEdit()
         self.quantityEdit.setValidator(onlyInt)
-        # self.quantityEdit.setFixedHeight(self.EDIT_HEIGHT)
         self.quantityEdit.editingFinished.connect(self.check_stock)
         
-        # form.addRow(widgets.QLabel("Item {}".format(item_number)))
         form.addRow(widgets.QLabel("Item ID"), self.item_id_edit)
         form.addRow(widgets.QLabel("Quantity"), self.quantityEdit)
         

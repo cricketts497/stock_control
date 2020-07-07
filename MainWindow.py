@@ -55,8 +55,6 @@ class MainWindow(widgets.QTabWidget):
         commit_button.setFocusPolicy(Qt.ClickFocus)
         self.orderLayout.addWidget(commit_button)
         
-        # self.size = self.orderLayout.sizeHint()
-        # self.setFixedSize(self.size)
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         
         #create the stock adding form
