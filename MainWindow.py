@@ -1,11 +1,11 @@
 import PyQt5.QtWidgets as widgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QDoubleValidator
 import datetime as dt
 import pandas as pd
 from item import Item
 
-class MainWindow(widgets.QWidget):
+class MainWindow(widgets.QTabWidget):
     STOCK_FILEPATH = "stock.csv" # path to the csv file containing the stock details: amounts prices descriptions etc.
     ORDERS_FILEPATH = "orders.csv" # path to the csv file containing the orders: order dates, order amounts etc.
     EBAY_CUT = 0.1 # proportion of the order taken by ebay
@@ -18,7 +18,7 @@ class MainWindow(widgets.QWidget):
         """
         Initialise the main GUI with the form for the order details, the first item form object and the order commiting button
         """
-        super(MainWindow, self).__init__()
+        super().__init__()
 
         #if the order is international, we don't set the paypal default
         self.international_order = False
@@ -26,39 +26,66 @@ class MainWindow(widgets.QWidget):
         #top bar title
         self.setWindowTitle("Stock Control")
     
-        #Set the main layout for the app
-        self.topLayout = widgets.QVBoxLayout()
-        self.setLayout(self.topLayout)
+        #create the order adding form
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        orderWidget = widgets.QWidget()
+        self.orderLayout = widgets.QVBoxLayout()
+        orderWidget.setLayout(self.orderLayout)
 
-        self.topLayout.addWidget(widgets.QLabel("<b>Add an order</b>"))
+        self.addTab(orderWidget, "Add an order")
 
         #Add the order adding form
-        self.top_form = self.create_top_form()      
-        self.topLayout.addLayout(self.top_form)
+        self.top_form = self.create_top_order_form()      
+        self.orderLayout.addLayout(self.top_form)
         
         #add the first item form
         self.itemLayout = widgets.QVBoxLayout()
         
-        self.items = [Item(1)]
+        self.items = [Item(1, False)]
         self.items[0].get_item_signal.connect(self.get_item)
         self.itemLayout.addWidget(self.items[0].widget)
         
-        self.topLayout.addLayout(self.itemLayout)
+        self.orderLayout.addLayout(self.itemLayout)
         
-        # #Add a profit readout
-        # self.profitEdit = widgets.QLineEdit("0")
-        # self.profitEdit.setReadOnly(True)
-        # profitForm = widgets.QFormLayout()
-        # profitForm.addRow(widgets.QLabel("Order profit, £"), self.profitEdit)
-        # self.topLayout.addLayout(profitForm)
+        self.orderLayout.addStretch(1)
         
         #Add a commit button
         commit_button = widgets.QPushButton("Done")
         commit_button.clicked.connect(self.order_done)
         commit_button.setFocusPolicy(Qt.ClickFocus)
-        self.topLayout.addWidget(commit_button)
+        self.orderLayout.addWidget(commit_button)
         
-    def create_top_form(self):
+        # self.size = self.orderLayout.sizeHint()
+        # self.setFixedSize(self.size)
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        
+        #create the stock adding form
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        stockWidget = widgets.QWidget()
+        self.stockLayout = widgets.QVBoxLayout()
+        stockWidget.setLayout(self.stockLayout)
+        
+        self.addTab(stockWidget, "Add new stock")
+        
+        #Add an item object
+        self.stockItemLayout = widgets.QVBoxLayout()
+        
+        self.stockItems = [Item(1, True)]
+        self.stockItems[0].get_item_signal.connect(self.get_item)
+        self.stockItemLayout.addWidget(self.stockItems[0].widget)
+        
+        self.stockLayout.addLayout(self.stockItemLayout)
+        
+        self.stockLayout.addStretch(1)
+        
+        #add a commit button
+        stock_commit_button = widgets.QPushButton("Done")
+        stock_commit_button.clicked.connect(self.stock_done)
+        stock_commit_button.setFocusPolicy(Qt.ClickFocus)
+        self.stockLayout.addWidget(stock_commit_button)        
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        
+    def create_top_order_form(self):
         """
         Create the QFormLayout object containing the static form entries at the top
         Entries: Date, postcode, order amount, ebay amount, paypal amount and the postage and packing amount
@@ -161,29 +188,44 @@ class MainWindow(widgets.QWidget):
             paypal_cut = order_amount * self.PAYPAL_PERCENT_CUT + self.PAYPAL_PER_ORDER_ABSOLUTE_CUT
             self.paypalCutEdit.setText('{:.2f}'.format(paypal_cut))
         
-            
-    def get_item(self, edit_num, item_num):
+        
+    def get_item(self, edit_num, item_id):
         """
         Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
         Add another item input to the form if this is the last
+        
+        When the edit_num >= 100, means this is for a stock item object, so apply it to them
+        
         SLOT connected to item objects Item.get_item_signal() SIGNAL
         
         Arguments:
-            edit_num: int, the zero-indexed index of the form item
+            edit_num: int, the zero-indexed index of the form item, if >=100 then this is for an item in the stock form
             item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
-        item = self.get_item_from_df(item_num)
+        item = self.get_item_from_df(item_id)
         
-        #Set the item's item pandas series containing the description, price, stock etc
-        self.items[edit_num].set_item(item)
-        
-        #Add the next item input to the form if it is full
-        if len(self.items) == edit_num+1 and len(item) > 0:
-            self.items.append(Item(edit_num+2))
-            self.items[-1].get_item_signal.connect(self.get_item)
-            self.itemLayout.addWidget(self.items[-1].widget)
+        if edit_num >= 100:
+            edit_num -= 100
             
-    def get_item_from_df(self, item_num):
+            #Set the item's item pandas series containing the description, price, stock etc
+            self.stockItems[edit_num].set_item(item)
+            
+            #Add the next item input to the form if it is full
+            if len(self.stockItems) == edit_num+1 and len(item) > 0:
+                self.stockItems.append(Item(edit_num+2, True))
+                self.stockItems[-1].get_item_signal.connect(self.get_item)
+                self.stockItemLayout.addWidget(self.stockItems[-1].widget)
+        else:
+            #Set the item's item pandas series containing the description, price, stock etc
+            self.items[edit_num].set_item(item)
+            
+            #Add the next item input to the form if it is full
+            if len(self.items) == edit_num+1 and len(item) > 0:
+                self.items.append(Item(edit_num+2, False))
+                self.items[-1].get_item_signal.connect(self.get_item)
+                self.itemLayout.addWidget(self.items[-1].widget)
+            
+    def get_item_from_df(self, item_ID):
         """
         Load the stock csv file and look for the item with a given ID number
         
@@ -194,7 +236,7 @@ class MainWindow(widgets.QWidget):
         stock = stock.set_index('item_id')
     
         try:
-            item = stock.loc[item_num]
+            item = stock.loc[item_ID]
         except KeyError:
             item = pd.Series()
             
@@ -322,6 +364,76 @@ class MainWindow(widgets.QWidget):
             msg.setStandardButtons(widgets.QMessageBox.Ok)
             msg.exec_()
             
+    def stock_done(self):
+        """
+        For adding stock
+        """
+        stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock = stock.set_index('item_id')
+        
+        stock_ok = False
+        for item in self.stockItems:
+            if item.item_id != item.NO_ITEM:#item ID has been input
+                #check the quantity is set
+                try:
+                    quantity = int(item.quantityEdit.text())
+                except ValueError:
+                    stock_ok = False
+                    break
+                    
+                #check for the index
+                try:
+                    stock.loc[item.item_id, 'stock']
+                except KeyError:
+                    stock_ok = False
+                    break
+                
+                #check that the order has a quantity
+                if quantity == 0:
+                    stock_ok = False
+                    break
+
+                stock_ok = True
+                
+        if stock_ok:
+            for item in self.stockItems:
+                if item.item_id != item.NO_ITEM:#item ID has been input
+                    # add the quantity from the stock line
+                    quantity = int(item.quantityEdit.text())
+                    stock.loc[item.item_id, 'stock'] += quantity
+                
+            ###
+            print(stock)
+            ###
+                
+            #save back to file
+            try:
+                stock.to_csv(self.STOCK_FILEPATH)
+            except PermissionError as err:
+                self.show_save_failed_message('stock database', err)
+                stock_ok = False
+            
+            #Message box pop-up asking if you want to do another order
+            if stock_ok:
+                msg = widgets.QMessageBox()
+                msg.setIcon(widgets.QMessageBox.Question)
+                msg.setText("Success!")
+                msg.setInformativeText("The stock has been added to the database. \n\nAdd another?")
+                msg.setWindowTitle("Stock added")
+                msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+                msg.setEscapeButton(widgets.QMessageBox.No)
+                msg.buttonClicked.connect(self.new_stock_input)
+                msg.exec_()
+        else:
+            #Message box pop-up asking if you want to do another order
+            msg = widgets.QMessageBox()
+            msg.setIcon(widgets.QMessageBox.Information)
+            msg.setText("No stock added")
+            msg.setInformativeText("Problems were found in the form")
+            msg.setWindowTitle("No stock added")
+            msg.setStandardButtons(widgets.QMessageBox.Ok)
+            msg.exec_()
+        
         
         
     def show_save_failed_message(self, file, error):
@@ -343,36 +455,62 @@ class MainWindow(widgets.QWidget):
 
     def new_order(self, buttonPressed):
         """
-        Clear the form with self.clear_form() if the user presses 'yes' to adding another order
-        
+        Clear the order form if the user presses 'yes' to adding another order
+        Removes any inputs to the order form and returns it to the default state
         Arguments:
             buttonPressed: The button pressed in the 'Order added' message box
         """
         if buttonPressed.text() == "&Yes":
-            self.clear_form()
+            print("Clearing order form")
             
-    def clear_form(self):
+            #date edit
+            today = dt.date.today()
+            yesterday = dt.date(today.year,today.month,today.day-1)
+            self.dateEdit.setText("{:%d/%m/%Y}".format(yesterday))
+            
+            self.postcodeEdit.setText("")
+            self.orderAmountEdit.setText("")
+            self.ebayCutEdit.setText("")
+            self.paypalCutEdit.setText("")
+            
+            self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
+            
+            #items
+            for item in self.items:
+                item.clear_form()
+            
+    def new_stock_input(self, buttonPressed):
         """
-        Removes any inputs to the form and returns it to the default state
-        run conditionally on 'yes' button being clicked in the order complete message box, in self.new_order()
+        Clears the stock input form if the user presses 'yes' to adding another stock input
+        
+        Arguments:
+            buttonPressed: The button pressed in the 'Stock added' message box
         """
-        print("Clearing form")
+        if buttonPressed.text() == "&Yes":
+            print("Clearing stock adding form")
+            
+            for item in self.stockItems:
+                item.clear_form()
         
-        #date edit
-        today = dt.date.today()
-        yesterday = dt.date(today.year,today.month,today.day-1)
-        self.dateEdit.setText("{:%d/%m/%Y}".format(yesterday))
         
-        self.postcodeEdit.setText("")
-        self.orderAmountEdit.setText("")
-        self.ebayCutEdit.setText("")
-        self.paypalCutEdit.setText("")
         
-        self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
         
-        #items
-        for item in self.items:
-            item.clear_form()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
     

@@ -6,12 +6,14 @@ import pandas as pd
 
 class Item(QObject):
     NO_ITEM = ""
-    # NO_QUANTITY = 0
+    BOX_HEIGHT = 100
+    # EDIT_HEIGHT = 20
     get_item_signal = Signal(int, str)
-    def __init__(self, item_number):
+    def __init__(self, item_number, stock_item):
         """
         Arguments:
             item_number: the item index in the list, starting from 1
+            stock_item: bool, is this for the stock input form
         """
         super().__init__()
         
@@ -22,9 +24,13 @@ class Item(QObject):
         
         #Zero indexed item number
         self.item_index = item_number-1
+        
+        if stock_item:
+            self.item_index += 100
     
         #GUI
         self.widget = widgets.QGroupBox("Item {}".format(item_number))
+        self.widget.setFixedHeight(self.BOX_HEIGHT)
         layout = widgets.QHBoxLayout()
         self.widget.setLayout(layout)
         
@@ -34,6 +40,7 @@ class Item(QObject):
         
         #item id
         self.item_id_edit = widgets.QLineEdit()
+        # self.item_id_edit.setFixedHeight(self.EDIT_HEIGHT)
         # self.item_id_edit.setValidator(onlyInt)
         #when the editing is finished, emit a signal from self to get the parent to find and set the item
         self.item_id_edit.editingFinished.connect(self.get_item)
@@ -41,6 +48,7 @@ class Item(QObject):
         #quantity
         self.quantityEdit = widgets.QLineEdit()
         self.quantityEdit.setValidator(onlyInt)
+        # self.quantityEdit.setFixedHeight(self.EDIT_HEIGHT)
         self.quantityEdit.editingFinished.connect(self.check_stock)
         
         # form.addRow(widgets.QLabel("Item {}".format(item_number)))

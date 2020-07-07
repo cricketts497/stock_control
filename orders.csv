@@ -1,7 +1,3 @@
-postcode,date,order_amount,ebay_amount,paypal_amount,postpack_amount,item1_num,item1_quantity,profit
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
+postcode,date,order_amount,ebay_amount,paypal_amount,postpack_amount,item1_num,item1_quantity,profit,item2_num,item2_quantity
+M15 4PW,06/07/2020,100,10.0,3.2,0.97,123456d,4,79.83,,
+S72BY,05/07/2020,1000,100.00,29.30,0.97,mavic23,10,841.73,123456d,10.0
