@@ -24,30 +24,33 @@ class Item(QObject):
         self.item_index = item_number-1
     
         #GUI
-        self.layout = widgets.QHBoxLayout()
+        self.widget = widgets.QGroupBox("Item {}".format(item_number))
+        layout = widgets.QHBoxLayout()
+        self.widget.setLayout(layout)
         
         form = widgets.QFormLayout()
         
         onlyInt = QIntValidator(0,99999999999)
         
+        #item id
         self.item_id_edit = widgets.QLineEdit()
         # self.item_id_edit.setValidator(onlyInt)
         #when the editing is finished, emit a signal from self to get the parent to find and set the item
         self.item_id_edit.editingFinished.connect(self.get_item)
         
+        #quantity
         self.quantityEdit = widgets.QLineEdit()
         self.quantityEdit.setValidator(onlyInt)
         self.quantityEdit.editingFinished.connect(self.check_stock)
-        self.quantityEdit.returnPressed.connect(self.check_stock)
         
-        form.addRow(widgets.QLabel("Item {}".format(item_number)))
+        # form.addRow(widgets.QLabel("Item {}".format(item_number)))
         form.addRow(widgets.QLabel("Item ID"), self.item_id_edit)
         form.addRow(widgets.QLabel("Quantity"), self.quantityEdit)
         
-        self.layout.addLayout(form)
+        layout.addLayout(form)
         
         self.describe_label = widgets.QLabel()
-        self.layout.addWidget(self.describe_label)
+        layout.addWidget(self.describe_label)
         
     def get_item(self):
         """
@@ -83,22 +86,23 @@ class Item(QObject):
         
         If not, open a message window warning that there is not enough stock
         """
-        # try:
         quantity = int(self.quantityEdit.text())
-        # except ValueError:#if left empty
-            # self.quantity = self.NO_QUANTITY
-            # print(self.quantity)
-            # return
-        
+                
         if len(self.item) > 0:#item pd.Series() is set
             if quantity > self.item.loc['stock']:
-                self.show_not_enough_stock_message()
+                self.show_not_enough_stock_message(quantity)
             
-    def show_not_enough_stock_message(self):
+    def show_not_enough_stock_message(self, quantity):
+        """
+        Show a message window that not enough of the item is available in stock
+        
+        Arguments:
+            quantity: the requested quantity of the item
+        """
         msg = widgets.QMessageBox()
         msg.setIcon(widgets.QMessageBox.Warning)
         msg.setText("Not enough stock available")
-        msg.setInformativeText("You have requested {0} of item {1} and only {2} are available in stock so the order cannot be fulfilled.".format(self.quantity, self.item.name, self.item.loc['stock']))
+        msg.setInformativeText("You have requested {0} of item {1} and only {2} are available in stock so the order cannot be fulfilled.".format(quantity, self.item.name, self.item.loc['stock']))
         msg.setWindowTitle("Stock issue")
         msg.setStandardButtons(widgets.QMessageBox.Ok)
         msg.exec_()
