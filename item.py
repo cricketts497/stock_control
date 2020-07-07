@@ -13,21 +13,20 @@ class Item(QObject):
         """
         Arguments:
             item_number: the item index in the list, starting from 1
-            stock_item: bool, is this for the stock input form
+            stock_item: bool, is this for the stock input form?
         """
         super().__init__()
+        
+        #Zero indexed item number
+        self.item_index = item_number-1
+        
+        self.stock_item = stock_item
         
         #set the default info about the item
         self.item_id = self.NO_ITEM
         # self.quantity = self.NO_QUANTITY
         self.item = pd.Series()
         
-        #Zero indexed item number
-        self.item_index = item_number-1
-        
-        if stock_item:
-            self.item_index += 100
-    
         #GUI
         self.widget = widgets.QGroupBox("Item {}".format(item_number))
         self.widget.setFixedHeight(self.BOX_HEIGHT)
@@ -96,13 +95,14 @@ class Item(QObject):
         """
         quantity = int(self.quantityEdit.text())
                 
-        if len(self.item) > 0:#item pd.Series() is set
+        if len(self.item) > 0 and not self.stock_item:#item pd.Series() is set and not adding stock
             if quantity > self.item.loc['stock']:
                 self.show_not_enough_stock_message(quantity)
             
     def show_not_enough_stock_message(self, quantity):
         """
         Show a message window that not enough of the item is available in stock
+        Only for order items
         
         Arguments:
             quantity: the requested quantity of the item

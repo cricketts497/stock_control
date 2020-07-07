@@ -42,7 +42,7 @@ class MainWindow(widgets.QTabWidget):
         self.itemLayout = widgets.QVBoxLayout()
         
         self.items = [Item(1, False)]
-        self.items[0].get_item_signal.connect(self.get_item)
+        self.items[0].get_item_signal.connect(self.get_order_item)
         self.itemLayout.addWidget(self.items[0].widget)
         
         self.orderLayout.addLayout(self.itemLayout)
@@ -71,7 +71,7 @@ class MainWindow(widgets.QTabWidget):
         self.stockItemLayout = widgets.QVBoxLayout()
         
         self.stockItems = [Item(1, True)]
-        self.stockItems[0].get_item_signal.connect(self.get_item)
+        self.stockItems[0].get_item_signal.connect(self.get_stock_item)
         self.stockItemLayout.addWidget(self.stockItems[0].widget)
         
         self.stockLayout.addLayout(self.stockItemLayout)
@@ -189,41 +189,51 @@ class MainWindow(widgets.QTabWidget):
             self.paypalCutEdit.setText('{:.2f}'.format(paypal_cut))
         
         
-    def get_item(self, edit_num, item_id):
+    def get_order_item(self, edit_num, item_id):
         """
         Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
         Add another item input to the form if this is the last
         
-        When the edit_num >= 100, means this is for a stock item object, so apply it to them
-        
-        SLOT connected to item objects Item.get_item_signal() SIGNAL
+        SLOT connected to item objects Item.get_item_signal() SIGNAL for order items
         
         Arguments:
-            edit_num: int, the zero-indexed index of the form item, if >=100 then this is for an item in the stock form
+            edit_num: int, the zero-indexed index of the form item
             item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
         item = self.get_item_from_df(item_id)
         
-        if edit_num >= 100:
-            edit_num -= 100
-            
-            #Set the item's item pandas series containing the description, price, stock etc
-            self.stockItems[edit_num].set_item(item)
-            
-            #Add the next item input to the form if it is full
-            if len(self.stockItems) == edit_num+1 and len(item) > 0:
-                self.stockItems.append(Item(edit_num+2, True))
-                self.stockItems[-1].get_item_signal.connect(self.get_item)
-                self.stockItemLayout.addWidget(self.stockItems[-1].widget)
-        else:
-            #Set the item's item pandas series containing the description, price, stock etc
-            self.items[edit_num].set_item(item)
-            
-            #Add the next item input to the form if it is full
-            if len(self.items) == edit_num+1 and len(item) > 0:
-                self.items.append(Item(edit_num+2, False))
-                self.items[-1].get_item_signal.connect(self.get_item)
-                self.itemLayout.addWidget(self.items[-1].widget)
+        #Set the item's item pandas series containing the description, price, stock etc
+        self.items[edit_num].set_item(item)
+        
+        #Add the next item input to the form if it is full
+        if len(self.items) == edit_num+1 and len(item) > 0:
+            self.items.append(Item(edit_num+2, False))
+            self.items[-1].get_item_signal.connect(self.get_order_item)
+            self.itemLayout.addWidget(self.items[-1].widget)
+                
+    def get_stock_item(self, edit_num, item_id):
+        """
+        Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
+        Add another item input to the form if this is the last
+        
+        SLOT connected to item objects Item.get_item_signal() SIGNAL for stock items
+        
+        Arguments:
+            edit_num: int, the zero-indexed index of the form item
+            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
+        """
+    
+        item = self.get_item_from_df(item_id)   
+        
+        #Set the item's item pandas series containing the description, price, stock etc
+        self.stockItems[edit_num].set_item(item)
+        
+        #Add the next item input to the form if it is full
+        if len(self.stockItems) == edit_num+1 and len(item) > 0:
+            self.stockItems.append(Item(edit_num+2, True))
+            self.stockItems[-1].get_item_signal.connect(self.get_stock_item)
+            self.stockItemLayout.addWidget(self.stockItems[-1].widget)
+        
             
     def get_item_from_df(self, item_ID):
         """
