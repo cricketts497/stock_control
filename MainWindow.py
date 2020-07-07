@@ -8,11 +8,13 @@ from item import Item
 class MainWindow(widgets.QWidget):
     STOCK_FILEPATH = "stock.csv" # path to the csv file containing the stock details
     EBAY_CUT = 0.1 # proportion of the order taken by ebay
-    PAYPAL_PERCENT_CUT = 0.03 # proportion of the order taken by paypal
+    PAYPAL_PERCENT_CUT = 0.029 # proportion of the order taken by paypal
     PAYPAL_PER_ORDER_ABSOLUTE_CUT = 0.3 # absolute amount in gbp taken by paypal per order
-    EBAY_INTERNATIONAL_PROGRAMME_POSTCODES = ["M20 4PQ", "M204PQ"]
-    def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
+    EBAY_INTERNATIONAL_PROGRAMME_POSTCODES = ["WS13 8UR", "WS138UR"]
+    POSTAGE_COST = 0.88 # default absolute gbp cost of postage per order
+    PACKING_COST = 0.09 # default absolute gbp cost of packing per order
+    def __init__(self):
+        super(MainWindow, self).__init__()
         
         # #load the stock csv file
         # self.stock = pd.read_csv(self.STOCK_FILEPATH)
@@ -81,23 +83,15 @@ class MainWindow(widgets.QWidget):
         self.paypalCutEdit.setValidator(cost_val)
         form.addRow(widgets.QLabel("Paypal cut, £"), self.paypalCutEdit)
         
+        #Postage and packing
+        post_and_pack_cost_default = self.POSTAGE_COST + self.PACKING_COST
+        self.ppEdit = widgets.QLineEdit("{:.2f}".format(post_and_pack_cost_default))
+        self.ppEdit.setValidator(cost_val)
+        form.addRow(widgets.QLabel("P&P cost, £"), self.ppEdit)
+        
         return form
         
-    def clear_form(self):
-        """
-        Removes any inputs to the form and returns it to the default state
-        SLOT connected to yesButton.clicked() SIGNAL in self.order_done()
-        """
-        print("Clearing form")
-        
-        #date edit
-        today = dt.date.today()
-        yesterday = dt.date(today.year,today.month,today.day-1)
-        self.dateEdit.setText("{:%d/%m/%Y}".format(yesterday))
-        
-        self.postcodeEdit.setText("")
-        self.orderAmountEdit.setText("")
-        
+
         
     def check_postcode(self):
         """
@@ -152,7 +146,12 @@ class MainWindow(widgets.QWidget):
     def get_item(self, edit_num, item_num):
         """
         Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
-        SLOT connected to item objects Item.get_item() SIGNAL
+        Add another item input to the form if this is the last
+        SLOT connected to item objects Item.get_item_signal() SIGNAL
+        
+        Arguments:
+            edit_num: int, the zero-indexed index of the form item
+            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
         item = self.get_item_from_df(item_num)
         
@@ -160,7 +159,7 @@ class MainWindow(widgets.QWidget):
         self.items[edit_num].set_item(item)
         
         #Add the next item input to the form if it is full
-        if len(self.items) == edit_num+1:
+        if len(self.items) == edit_num+1 and len(item) > 0:
             self.items.append(Item(edit_num+2))
             self.items[-1].get_item_signal.connect(self.get_item)
             self.itemLayout.addLayout(self.items[-1].layout)
@@ -168,9 +167,12 @@ class MainWindow(widgets.QWidget):
     def get_item_from_df(self, item_num):
         """
         Load the stock csv file and look for the item with a given ID number
+        
+        Arguments:
+            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
         stock = pd.read_csv(self.STOCK_FILEPATH)
-        stock = stock.set_index('item_num')
+        stock = stock.set_index('item_id')
     
         try:
             item = stock.loc[item_num]
@@ -185,19 +187,99 @@ class MainWindow(widgets.QWidget):
         Apply the order details to the stock csv file
         SLOT connected to commit_button.clicked() SIGNAL in __init__()
         """
+        stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock = stock.set_index('item_id')
+        
+        order_ok = False
         for item in self.items:
-            print(item.item_number)
-            print(item.item)
-            
-        # #Message box pop-up asking if you want to do another order
-        # msg = widgets.QMessageBox()
-        # msg.setIcon(widgets.QMessageBox.Question)
-        # msg.setText("Success!")
-        # msg.setInformativeText("The order has been added and the stock has been removed from the database. \n\nAdd another?")
-        # msg.setWindowTitle("Order Added")
-        # msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
-        # msg.setEscapeButton(widgets.QMessageBox.No)
-        # msg.exec_()
+            if item.item_id != item.NO_ITEM:#item ID has been input
+                #check the quantity
+                try:
+                    quantity = int(item.quantityEdit.text())
+                except ValueError:
+                    order_ok = False
+                    break
+                    
+                #check for the index
+                try:
+                    stock.loc[item.item_id, 'stock']
+                except KeyError:
+                    order_ok = False
+                    break
+                
+                #check the requested quantity is available
+                if quantity > stock.loc[item.item_id, 'stock']:
+                    item.show_not_enough_stock_message()
+                    order_ok = False
+                    break
+                elif quantity == 0:
+                    order_ok = False
+                    break
 
+                order_ok = True
+        
+        msg = widgets.QMessageBox()
+        if order_ok:
+            for item in self.items:
+                if item.item_id != item.NO_ITEM:#item ID has been input
+                
+                    # deduct the quantity from the stock line
+                    quantity = int(item.quantityEdit.text())
+                    stock.loc[item.item_id, 'stock'] -= quantity
+                        
+            print(stock)
+            
+            #Message box pop-up asking if you want to do another order
+            msg.setIcon(widgets.QMessageBox.Question)
+            msg.setText("Success!")
+            msg.setInformativeText("The order has been added and the stock has been deducted from the database. \n\nAdd another?")
+            msg.setWindowTitle("Order added")
+            msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+            msg.setEscapeButton(widgets.QMessageBox.No)
+            
+            msg.buttonClicked.connect(self.new_order)
+        else:
+            #Message box pop-up asking if you want to do another order
+            msg.setIcon(widgets.QMessageBox.Information)
+            msg.setText("No items added")
+            msg.setInformativeText("Problems were found in the form")
+            msg.setWindowTitle("No items added")
+            msg.setStandardButtons(widgets.QMessageBox.Ok)
+            
+        msg.exec_()
+
+    def new_order(self, buttonPressed):
+        """
+        Clear the form with self.clear_form() if the user presses 'yes' to adding another order
+        
+        Arguments:
+            buttonPressed: The button pressed in the 'Order added' message box
+        """
+        if buttonPressed.text() == "&Yes":
+            self.clear_form()
+            
+    def clear_form(self):
+        """
+        Removes any inputs to the form and returns it to the default state
+        run conditionally on 'yes' button being clicked in the order complete message box, in self.new_order()
+        """
+        print("Clearing form")
+        
+        #date edit
+        today = dt.date.today()
+        yesterday = dt.date(today.year,today.month,today.day-1)
+        self.dateEdit.setText("{:%d/%m/%Y}".format(yesterday))
+        
+        self.postcodeEdit.setText("")
+        self.orderAmountEdit.setText("")
+        self.ebayCutEdit.setText("")
+        self.paypalCutEdit.setText("")
+        
+        self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
+        
+        #items
+        for item in self.items:
+            item.clear_form()
+        
         
     
