@@ -33,6 +33,12 @@ class MainWindow(widgets.QTabWidget):
         orderWidget.setLayout(self.orderLayout)
 
         self.addTab(orderWidget, "Add an order")
+        
+        #undo button
+        undo_button = widgets.QPushButton("Undo last order")
+        undo_button.clicked.connect(self.undo_last_order)
+        undo_button.setFocusPolicy(Qt.ClickFocus)
+        self.orderLayout.addWidget(undo_button)
 
         #Add the order adding form
         self.top_form = self.create_top_order_form()      
@@ -314,7 +320,7 @@ class MainWindow(widgets.QTabWidget):
                     stock.loc[item.item_id, 'stock'] -= quantity
 
                     #add the items to the order dict
-                    order['item{}_num'.format(i)] = item.item_id
+                    order['item{}_id'.format(i)] = item.item_id
                     order['item{}_quantity'.format(i)] = quantity
                     
                     #calculate the outlay for the items and deduct from the profit
@@ -348,6 +354,10 @@ class MainWindow(widgets.QTabWidget):
                 try:
                     stock.to_csv(self.STOCK_FILEPATH)
                 except PermissionError as err:
+                    #remove the last order and resave
+                    saved_orders = saved_orders[:-1]
+                    saved_orders.to_csv(self.ORDERS_FILEPATH)
+                
                     self.show_save_failed_message('stock database', err)
                     order_ok = False
                 
@@ -501,14 +511,88 @@ class MainWindow(widgets.QTabWidget):
                 item.clear_form()
         
         
+    def undo_last_order(self):
+        """
+        Ask for confirmation about removing the last order
         
+        SLOT connected to undo_button.clicked() SIGNAL
+        """
+        orders = pd.read_csv(self.ORDERS_FILEPATH)
         
+        last_order = orders.iloc[-1]
         
+        #show warning
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Warning)
+        msg.setText("Are you sure you want to remove the last order? This cannot be undone.")
+        msg.setInformativeText("Date: {0}, Postcode: {1}, Amount: £{2:.2f}".format(last_order.loc['date'], last_order.loc['postcode'], last_order.loc['order_amount']))
+        msg.setWindowTitle("Undo last order")
+        msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.Cancel)
+        msg.buttonClicked.connect(self.undo_last_order_confirmed)
+        msg.exec_()
+
+    def undo_last_order_confirmed(self, buttonPressed):
+        """
+        Remove the last order from the orders database and re-add the stock to the stock database
         
+        SLOT connected to msg.buttonClicked() SIGNAL in self.undo_last_order()
+        """
+        if buttonPressed.text() == "&Yes":
+            undo_ok = True
+            
+            orders = pd.read_csv(self.ORDERS_FILEPATH)
+            stock = pd.read_csv(self.STOCK_FILEPATH)
+            stock = stock.set_index('item_id')
+            
+            last_order = orders.iloc[-1]
+            
+            #remove the order
+            orders = orders.drop([last_order.name])
+            
+            item_num = 1
+            while True:
+                try:
+                    item_id = last_order.loc['item{}_id'.format(item_num)]
+                    quantity = int(last_order.loc['item{}_quantity'.format(item_num)])
+                except (KeyError, ValueError):
+                    break
+                
+                #re-add the stock of the item
+                try:
+                    stock.loc[item_id, 'stock'] += quantity
+                except KeyError:
+                    undo_ok = False
+                    break
+                
+                item_num += 1
         
-        
-        
-        
+            ###
+            print(orders)
+            print(stock)
+            ###
+            
+            if undo_ok:
+                #resave the orders
+                try:
+                    orders.to_csv(self.ORDERS_FILEPATH)
+                except PermissionError as err:
+                    self.show_save_failed_message('orders database', err)
+                    undo_ok = False
+                    
+                if undo_ok:
+                    #resave the stock
+                    try:
+                        stock.to_csv(self.STOCK_FILEPATH)
+                    except PermissionError as err:
+                        #re-add the last order
+                        orders = orders.append(last_order)
+                        orders.to_csv(self.ORDERS_FILEPATH)
+                    
+                        self.show_save_failed_message('stock database', err)
+                        undo_ok = False
+            
+                
+                    
         
         
         
