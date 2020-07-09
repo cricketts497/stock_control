@@ -1,4 +1,3 @@
--undo buttons for both orders and stock
 -build to .exe
 -drive backup
 -'Find' tab

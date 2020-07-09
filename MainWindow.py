@@ -7,6 +7,7 @@ from item import Item
 
 class MainWindow(widgets.QTabWidget):
     STOCK_FILEPATH = "stock.csv" # path to the csv file containing the stock details: amounts prices descriptions etc.
+    STOCK_ADDING_FILEPATH = "stock_adding.csv" # path to the csv file containing the details of the stock inputs
     ORDERS_FILEPATH = "orders.csv" # path to the csv file containing the orders: order dates, order amounts etc.
     EBAY_CUT = 0.1 # proportion of the order taken by ebay
     PAYPAL_PERCENT_CUT = 0.029 # proportion of the order taken by paypal
@@ -70,6 +71,12 @@ class MainWindow(widgets.QTabWidget):
         stockWidget.setLayout(self.stockLayout)
         
         self.addTab(stockWidget, "Add new stock")
+        
+        #undo button
+        stock_undo_button = widgets.QPushButton("Undo last stock add")
+        stock_undo_button.clicked.connect(self.undo_last_stock_add)
+        stock_undo_button.setFocusPolicy(Qt.ClickFocus)
+        self.stockLayout.addWidget(stock_undo_button)
         
         #Add an item object
         self.stockItemLayout = widgets.QVBoxLayout()
@@ -361,17 +368,17 @@ class MainWindow(widgets.QTabWidget):
                     self.show_save_failed_message('stock database', err)
                     order_ok = False
                 
-            #Message box pop-up asking if you want to do another order
-            if order_ok:
-                msg = widgets.QMessageBox()
-                msg.setIcon(widgets.QMessageBox.Question)
-                msg.setText("Success!")
-                msg.setInformativeText("The order has been added and the stock has been deducted from the database. \n\nAdd another?")
-                msg.setWindowTitle("Order added")
-                msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
-                msg.setEscapeButton(widgets.QMessageBox.No)
-                msg.buttonClicked.connect(self.new_order)
-                msg.exec_()
+                #Message box pop-up asking if you want to do another order
+                if order_ok:
+                    msg = widgets.QMessageBox()
+                    msg.setIcon(widgets.QMessageBox.Question)
+                    msg.setText("Success!")
+                    msg.setInformativeText("The order has been added and the stock has been deducted from the database. \n\nAdd another?")
+                    msg.setWindowTitle("Order added")
+                    msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+                    msg.setEscapeButton(widgets.QMessageBox.No)
+                    msg.buttonClicked.connect(self.new_order)
+                    msg.exec_()
         else:
             #Message box pop-up asking if you want to do another order
             msg = widgets.QMessageBox()
@@ -414,34 +421,62 @@ class MainWindow(widgets.QTabWidget):
                 stock_ok = True
                 
         if stock_ok:
+            #create the new stock add object
+            stock_add = {
+                        'date':"{:%d/%m/%Y}".format(dt.date.today()),
+                        'time':"{0}:{1}:{2}".format(dt.datetime.now().hour, dt.datetime.now().minute, dt.datetime.now().second)
+                        }
+            
+            item_num = 1
             for item in self.stockItems:
                 if item.item_id != item.NO_ITEM:#item ID has been input
                     # add the quantity from the stock line
                     quantity = int(item.quantityEdit.text())
                     stock.loc[item.item_id, 'stock'] += quantity
+                    
+                    stock_add['item{}_id'.format(item_num)] = item.item_id
+                    stock_add['item{}_quantity'.format(item_num)] = quantity
+                    item_num += 1
                 
             ###
+            print(stock_add)
             print(stock)
             ###
+            
+            #add the new stock input to the database
+            stock_adding = pd.read_csv(self.STOCK_ADDING_FILEPATH)
+            stock_adding = stock_adding.append(stock_add, ignore_index=True)
+            stock_adding = stock_adding.set_index(['date', 'time'])
                 
             #save back to file
             try:
-                stock.to_csv(self.STOCK_FILEPATH)
+                stock_adding.to_csv(self.STOCK_ADDING_FILEPATH)
             except PermissionError as err:
-                self.show_save_failed_message('stock database', err)
+                self.show_save_failed_message('stock input database', err)
                 stock_ok = False
             
-            #Message box pop-up asking if you want to do another order
             if stock_ok:
-                msg = widgets.QMessageBox()
-                msg.setIcon(widgets.QMessageBox.Question)
-                msg.setText("Success!")
-                msg.setInformativeText("The stock has been added to the database. \n\nAdd another?")
-                msg.setWindowTitle("Stock added")
-                msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
-                msg.setEscapeButton(widgets.QMessageBox.No)
-                msg.buttonClicked.connect(self.new_stock_input)
-                msg.exec_()
+                try:
+                    stock.to_csv(self.STOCK_FILEPATH)
+                except PermissionError as err:
+                    #remove the stock input
+                    stock_adding = stock_adding[:-1]
+                    stock_adding.to_csv(self.STOCK_ADDING_FILEPATH)
+                
+                    self.show_save_failed_message('stock database', err)
+                    stock_ok = False
+            
+                #Message box pop-up asking if you want to do another order
+                if stock_ok:
+                    msg = widgets.QMessageBox()
+                    msg.setIcon(widgets.QMessageBox.Question)
+                    msg.setText("Success!")
+                    msg.setInformativeText("The stock has been added to the database. \n\nAdd another?")
+                    msg.setWindowTitle("Stock added")
+                    msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+                    msg.setEscapeButton(widgets.QMessageBox.No)
+                    msg.buttonClicked.connect(self.new_stock_input)
+                    msg.exec_()
         else:
             #Message box pop-up asking if you want to do another order
             msg = widgets.QMessageBox()
@@ -515,7 +550,7 @@ class MainWindow(widgets.QTabWidget):
         """
         Ask for confirmation about removing the last order
         
-        SLOT connected to undo_button.clicked() SIGNAL
+        SLOT connected to undo_button.clicked() SIGNAL in self.__init__()
         """
         orders = pd.read_csv(self.ORDERS_FILEPATH)
         
@@ -549,6 +584,10 @@ class MainWindow(widgets.QTabWidget):
             #remove the order
             orders = orders.drop([last_order.name])
             
+            last_order = last_order.rename(last_order.loc['postcode'])
+            last_order = last_order.drop('postcode')
+            orders = orders.set_index('postcode')
+            
             item_num = 1
             while True:
                 try:
@@ -560,15 +599,16 @@ class MainWindow(widgets.QTabWidget):
                 #re-add the stock of the item
                 try:
                     stock.loc[item_id, 'stock'] += quantity
-                except KeyError:
+                except KeyError as err:
+                    self.show_missing_stock_item_message(item_id, err)
                     undo_ok = False
                     break
                 
                 item_num += 1
         
             ###
-            print(orders)
-            print(stock)
+            # print(orders)
+            # print(stock)
             ###
             
             if undo_ok:
@@ -591,13 +631,101 @@ class MainWindow(widgets.QTabWidget):
                         self.show_save_failed_message('stock database', err)
                         undo_ok = False
             
+    def show_missing_stock_item_message(self, item_id, error):
+        """
+        Show a message box when looking up a stock item fails
+        
+        Arguments:
+            item_id: str, the id of the item that is missing
+            error: KeyError or str, the key error thrown
+        """
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Warning)
+        msg.setText("Item look-up failed")
+        msg.setInformativeText("Item {} could not be found in the database, the operation has been cancelled.".format(item_id))
+        msg.setDetailedText("{}".format(error))
+        msg.setWindowTitle("Item look-up failed")
+        msg.setStandardButtons(widgets.QMessageBox.Ok)
+        msg.exec_()
                 
+    def undo_last_stock_add(self):
+        """
+        Ask for confirmation about removing the last stock add
+        
+        SLOT connected to stock_undo_button.clicked() SIGNAL in self.__init__()
+        """
+        stock_adds = pd.read_csv(self.STOCK_ADDING_FILEPATH)
+        
+        last_add = stock_adds.iloc[-1]
+        print(last_add)
+        
+        #show warning
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Warning)
+        msg.setText("Are you sure you want to remove the last stock input? This cannot be undone.")
+        msg.setInformativeText("Date: {0}, Time: {1}, First item ID: {2}".format(last_add.loc['date'], last_add.loc['time'], last_add.loc['item1_id']))
+        msg.setWindowTitle("Undo last stock add")
+        msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.Cancel)
+        msg.buttonClicked.connect(self.undo_last_stock_add_confirmed)
+        msg.exec_()
+        
+    def undo_last_stock_add_confirmed(self, buttonPressed):
+        """
+        Remove the last stock add from the stock adding database and remove the stock from the stock database
+        
+        SLOT connected to msg.buttonClicked() SIGNAL in self.undo_last_stock_add()
+        """
+        if buttonPressed.text() == "&Yes":
+            undo_ok = True
+            stock_adds = pd.read_csv(self.STOCK_ADDING_FILEPATH)
+            stock = pd.read_csv(self.STOCK_FILEPATH)
+            stock = stock.set_index('item_id')
+            
+            last_add = stock_adds.iloc[-1]
+            
+            #drop the last stock add
+            stock_adds = stock_adds.drop([last_add.name])
+            
+            item_num = 1
+            while True:
+                try:
+                    item_id = last_add.loc['item{}_id'.format(item_num)]
+                    quantity = int(last_add.loc['item{}_quantity'.format(item_num)])
+                except (KeyError, ValueError):
+                    break
+                
+                #remove the stock of the item
+                try:
+                    stock.loc[item_id, 'stock'] -= quantity
+                except KeyError as err:
+                    self.show_missing_stock_item_message(item_id, err)
+                    undo_ok = False
+                    break
+                
+                item_num += 1
+        
+            if undo_ok:
+                #resave the stock adding
+                stock_adds_to_save = stock_adds.set_index(['date', 'time'])
+                try:
+                    stock_adds_to_save.to_csv(self.STOCK_ADDING_FILEPATH)
+                except PermissionError as err:
+                    self.show_save_failed_message('stock input database', err)
+                    undo_ok = False
                     
-        
-        
-        
-        
-        
+                if undo_ok:
+                    #resave the stock database
+                    try:
+                        stock.to_csv(self.STOCK_FILEPATH)
+                    except PermissionError as err:
+                        #re-add the stock add
+                        stock_adds = stock_adds.append(last_add)
+                        stock_adds = stock_adds.set_index(['date', 'time'])
+                        stock_adds.to_csv(self.STOCK_ADDING_FILEPATH)
+                    
+                        self.show_save_failed_message('stock database', err)
+                        undo_ok = False
+                        
         
         
         
