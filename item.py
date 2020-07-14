@@ -35,7 +35,7 @@ class Item(QObject):
         
         form = widgets.QFormLayout()
         
-        onlyInt = QIntValidator(0,99999999999)
+        onlyInt = QIntValidator(0,999999)
         
         #item id
         self.item_id_edit = widgets.QLineEdit()
