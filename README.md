@@ -15,7 +15,7 @@ Stock can be added on the second tab with the same `item_id` values. The form ex
 ![Stock adding form](/images/stock_form.png)
 
 ## Installation and run instructions
-1. Clone the repository into you working directory with `git clone https://github.com/cricketts497/stock_control`
+1. Clone the repository into your working directory with `git clone https://github.com/cricketts497/stock_control`
 2. Install python 3 and pip
 3. `pip install PyQt5 pandas`
 4. `python main.py`
