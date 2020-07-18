@@ -186,8 +186,8 @@ class MainWindow(widgets.QTabWidget):
     def closing_actions(self, buttonPressed):
         if buttonPressed.text() == "&Yes":
             for filename in [self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH]:
-                new_file = self.da.getID(filename)
-                self.da.push(filename, new=new_file)
+                file_exists = self.da.getID(filename)
+                self.da.push(filename, new=not file_exists)
 
         self.window_quit_signal.emit()
         
