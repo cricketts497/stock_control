@@ -27,26 +27,7 @@ class MainWindow(widgets.QTabWidget):
 
         #init the drive file access and pull down the files
         self.da = DriveAccess()
-        # stock, orders, stock_adding = self.da.pull_fileGroup([self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH])
-        # stock = stock.set_index('item_id')
-        # try:
-            # stock.to_csv(self.STOCK_FILEPATH)
-        # except PermissionError as err:
-            # self.show_save_failed_message('stock database', err)
-            
-        # orders = orders.set_index('postcode')
-        # try:
-            # orders.to_csv(self.ORDERS_FILEPATH)
-        # except PermissionError as err:
-            # self.show_save_failed_message('order database', err)
-
-        # stock_adding = stock_adding.set_index(['date', 'time'])
-        # try:
-            # stock_adding.to_csv(self.STOCK_ADDING_FILEPATH)
-        # except PermissionError as err:
-            # self.show_save_failed_message('stock input database', err)
-            
-            
+        self.ask_pull()
 
         #if the order is international, we don't set the paypal default
         self.international_order = False
@@ -122,6 +103,48 @@ class MainWindow(widgets.QTabWidget):
         stock_commit_button.setFocusPolicy(Qt.ClickFocus)
         self.stockLayout.addWidget(stock_commit_button)        
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        
+    def ask_pull(self):
+        """
+        Ask if the user wants to keep the local or remote file in a message window
+        """
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Question)
+        msg.setText("Would you like to download the database files from google drive?")
+        msg.setInformativeText("Clicking 'yes' will download the database files from google drive and overwrite the local files. Clicking 'no' will keep the local files.")
+        msg.setWindowTitle("Download")
+        msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+        msg.buttonClicked.connect(self.remote_pull)
+        msg.exec_()
+    
+    def remote_pull(self, buttonPressed):
+        """
+        If the user agrees to downloading the remote files, get the files and overwrite the local ones.
+        SLOT connected to msg.buttonClicked() SIGNAL in self.ask_pull()
+        
+        Arguments:
+            buttonPressed: the button pressed in the download question message box
+        """
+        if buttonPressed.text() == "&Yes":       
+            stock, orders, stock_adding = self.da.pull_fileGroup([self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH])
+            stock = stock.set_index('item_id')
+            try:
+                stock.to_csv(self.STOCK_FILEPATH)
+            except PermissionError as err:
+                self.show_save_failed_message('stock database', err)
+                
+            orders = orders.set_index('postcode')
+            try:
+                orders.to_csv(self.ORDERS_FILEPATH)
+            except PermissionError as err:
+                self.show_save_failed_message('order database', err)
+
+            stock_adding = stock_adding.set_index(['date', 'time'])
+            try:
+                stock_adding.to_csv(self.STOCK_ADDING_FILEPATH)
+            except PermissionError as err:
+                self.show_save_failed_message('stock input database', err)
+        
         
     def closeEvent(self, event):
         """
@@ -292,7 +315,7 @@ class MainWindow(widgets.QTabWidget):
         self.stockItems[edit_num].set_item(item)
         
         #Add the next item input to the form if it is full
-        if len(self.stockItems) == edit_num+1 and len(item) > 0:
+        if len(self.stockItems) == edit_num+1 and self.stockItems[edit_num].item_id != self.stockItems[edit_num].NO_ITEM:
             self.stockItems.append(Item(edit_num+2, True))
             self.stockItems[-1].get_item_signal.connect(self.get_stock_item)
             self.stockItemLayout.addWidget(self.stockItems[-1].widget)
@@ -390,13 +413,15 @@ class MainWindow(widgets.QTabWidget):
                     
                     i+=1
 
+            print(order)
+
             #load the order saving file and append the new order
             saved_orders = pd.read_csv(self.ORDERS_FILEPATH)
             saved_orders = saved_orders.append(order, ignore_index=True)
             saved_orders = saved_orders.set_index('postcode')
 
             ###
-            print(saved_orders)
+            # print(saved_orders)
             ###
 
             #save the orders file
@@ -407,7 +432,7 @@ class MainWindow(widgets.QTabWidget):
                 order_ok = False
                   
             ####
-            print(stock)
+            # print(stock)
             ####
             
             #save the new stock database to file if everything above is ok
@@ -450,6 +475,7 @@ class MainWindow(widgets.QTabWidget):
         stock = pd.read_csv(self.STOCK_FILEPATH)
         stock = stock.set_index('item_id')
         
+        new_item = {item.item_id:False for item in self.stockItems}
         stock_ok = False
         for item in self.stockItems:
             if item.item_id != item.NO_ITEM:#item ID has been input
@@ -460,18 +486,22 @@ class MainWindow(widgets.QTabWidget):
                     stock_ok = False
                     break
                     
-                #check for the index
+                #check for the index, if it's not found this is a new item and we need to check the manufacturer and category values are set
                 try:
                     stock.loc[item.item_id, 'stock']
                 except KeyError:
-                    stock_ok = False
-                    break
-                
-                #check that the order has a quantity
+                    print('New item with id {}'.format(id))
+                    new_item[item.item_id] = True
+                    if item.manufacturerEdit.text() == item.NO_MANUFACTURER or item.categoryEdit.text() == item.NO_CATEGORY:
+                        stock_ok = False
+                        break
+                        
+                #check that the stock add has a quantity
                 if quantity == 0:
                     stock_ok = False
                     break
 
+                #Found at least one valid item
                 stock_ok = True
                 
         if stock_ok:
@@ -486,7 +516,11 @@ class MainWindow(widgets.QTabWidget):
                 if item.item_id != item.NO_ITEM:#item ID has been input
                     # add the quantity from the stock line
                     quantity = int(item.quantityEdit.text())
-                    stock.loc[item.item_id, 'stock'] += quantity
+                    
+                    if new_item[item.item_id]:
+                        stock = stock.append(pd.Series({'stock':quantity, 'manufacturer':item.manufacturerEdit.text(), 'category':item.categoryEdit.text()}, name=item.item_id))
+                    else:
+                        stock.loc[item.item_id, 'stock'] += quantity
                     
                     stock_add['item{}_id'.format(item_num)] = item.item_id
                     stock_add['item{}_quantity'.format(item_num)] = quantity
@@ -494,7 +528,7 @@ class MainWindow(widgets.QTabWidget):
                 
             ###
             print(stock_add)
-            print(stock)
+            # print(stock)
             ###
             
             #add the new stock input to the database
@@ -642,6 +676,8 @@ class MainWindow(widgets.QTabWidget):
             last_order = last_order.drop('postcode')
             orders = orders.set_index('postcode')
             
+            print(last_order)
+            
             item_num = 1
             while True:
                 try:
@@ -736,6 +772,8 @@ class MainWindow(widgets.QTabWidget):
             stock = stock.set_index('item_id')
             
             last_add = stock_adds.iloc[-1]
+            
+            print(last_add)
             
             #drop the last stock add
             stock_adds = stock_adds.drop([last_add.name])

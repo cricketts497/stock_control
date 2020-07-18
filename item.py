@@ -6,8 +6,11 @@ import pandas as pd
 
 class Item(QObject):
     NO_ITEM = ""
+    NO_MANUFACTURER = ""
+    NO_CATEGORY = ""
     BOX_HEIGHT = 100
-    # EDIT_HEIGHT = 20
+    NEW_ITEM_BOX_HEIGHT = 200
+
     get_item_signal = Signal(int, str)
     def __init__(self, item_number, stock_item):
         """
@@ -22,10 +25,18 @@ class Item(QObject):
         
         self.stock_item = stock_item
         
+        self.form_expanded = False
+        
         #set the default info about the item
         self.item_id = self.NO_ITEM
         # self.quantity = self.NO_QUANTITY
         self.item = pd.Series()
+        
+        #line edits only visible when putting new items into the stock database
+        self.manufacturerEdit = widgets.QLineEdit()
+        self.categoryEdit = widgets.QLineEdit()
+        self.manufacturerEdit.editingFinished.connect(self.setLower)
+        self.categoryEdit.editingFinished.connect(self.setLower)
         
         #GUI
         self.widget = widgets.QGroupBox("Item {}".format(item_number))
@@ -33,7 +44,7 @@ class Item(QObject):
         layout = widgets.QHBoxLayout()
         self.widget.setLayout(layout)
         
-        form = widgets.QFormLayout()
+        self.form = widgets.QFormLayout()
         
         onlyInt = QIntValidator(0,999999)
         
@@ -47,13 +58,23 @@ class Item(QObject):
         self.quantityEdit.setValidator(onlyInt)
         self.quantityEdit.editingFinished.connect(self.check_stock)
         
-        form.addRow(widgets.QLabel("Item ID"), self.item_id_edit)
-        form.addRow(widgets.QLabel("Quantity"), self.quantityEdit)
+        self.form.addRow(widgets.QLabel("Item ID"), self.item_id_edit)
+        self.form.addRow(widgets.QLabel("Quantity"), self.quantityEdit)
         
-        layout.addLayout(form)
+        layout.addLayout(self.form)
         
         self.describe_label = widgets.QLabel()
         layout.addWidget(self.describe_label)
+        
+    def setLower(self):
+        """
+        Set the text in the manufacturer and category inputs to lower case
+        """
+        cat = str.lower(self.categoryEdit.text())
+        man = str.lower(self.manufacturerEdit.text())
+        
+        self.categoryEdit.setText(cat)
+        self.manufacturerEdit.setText(man)
         
     def get_item(self):
         """
@@ -81,9 +102,25 @@ class Item(QObject):
         elif self.item_id == self.NO_ITEM:
             description = ''
         else:
+            #add options for adding a new item
             description = 'Not found'
+            
+            if self.stock_item:
+                self.set_new_item()
+            
         self.describe_label.setText(description)
-        
+    
+    def set_new_item(self):
+        """
+        Expand the form to allow the input of a new item to the stock database
+        """
+        if not self.form_expanded:
+            self.form.addRow(widgets.QLabel('Manufacturer'), self.manufacturerEdit)
+            self.form.addRow(widgets.QLabel('Category'), self.categoryEdit)
+            self.widget.setFixedHeight(self.NEW_ITEM_BOX_HEIGHT)
+            self.form_expanded = True
+   
+    
     def check_stock(self):
         """
         Check there is enough stock available to fulfill the order
@@ -122,7 +159,12 @@ class Item(QObject):
         
         self.item_id_edit.setText(self.NO_ITEM)
         self.quantityEdit.setText("")
+        
+        self.manufacturerEdit.setText(self.NO_MANUFACTURER)
+        self.categoryEdit.setText(self.NO_CATEGORY)
+        
         self.describe_label.setText("")
+        
         
         
         

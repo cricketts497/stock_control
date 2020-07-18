@@ -1,3 +1,11 @@
 item_id,manufacturer,category,stock
-123456d,DT Swiss,competition,307
-mavic23,mavic,spoke key,341
+123456d,DT Swiss,competition,317
+mavic23,mavic,spoke key,351
+maviccomp242,mavic,spoke,2
+maviccomp244,mavic,spoke,10
+maviccomp246,Mavic,Competition,77
+maviccomp248,mavic ,competition,40
+maviccomp244,,,10
+maviccomp250,mavic,competition,10
+maviccomp255,mavic,competition,10
+maviccomp260,mavic,competition,0
