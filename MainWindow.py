@@ -120,7 +120,7 @@ class MainWindow(widgets.QTabWidget):
             
                 mod_times = mod_times.append({'local':local_mod_time, 'remote':remote_mod_time, 'filename':filename}, ignore_index=True)
             else:
-                mod_times = mod_times.append({'local':local_mod_time, 'filename':filename}, ignore_index=True)
+                mod_times = mod_times.append({'local':local_mod_time, 'remote':None, 'filename':filename}, ignore_index=True)
         
         mod_times.remote = pd.to_datetime(mod_times.remote, errors='coerce')
         
