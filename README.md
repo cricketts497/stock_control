@@ -1,5 +1,5 @@
 # Stock control GUI project
-Form to simplify database stock management with ebay orders
+Form to simplify database stock management with ebay orders.
 
 ## Adding orders
 Orders detailing are added manually, including date, postcode and order amount. Default values are set for the ebay, paypal, and postage and packaging costs.
@@ -17,8 +17,9 @@ Stock can be added on the second tab with the same `item_id` values. The form ex
 ## Installation and run instructions
 1. Clone the repository into your working directory with `git clone https://github.com/cricketts497/stock_control`
 2. Install python 3 and pip
-3. `pip install PyQt5 pandas`
-4. `python main.py`
+3. `pip install PyQt5 pandas google-api-python-client google-auth-oauthlib`
+4. Create/ get OAuth 2.0 Client IDs for google drive access for the application (https://console.developers.google.com/apis/credentials), save them in `../client_secret.json` relative to your working directory
+5. `python main.py`
 
 ## Edits
-Filepaths and cost amounts can be edited in the class variables in MainWindow.py
+Filepaths and cost amounts can be edited in the class variables in MainWindow.py, the location of the google drive api credentials can be edited in driveAccess.py (DriveAccess.CREDENTIALS)
