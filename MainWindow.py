@@ -4,6 +4,7 @@ from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtCore import pyqtSignal as Signal
 import datetime as dt
 import pandas as pd
+import os
 from item import Item
 from driveAccess import DriveAccess
 
@@ -108,6 +109,23 @@ class MainWindow(widgets.QTabWidget):
         """
         Ask if the user wants to keep the local or remote file in a message window
         """
+        mod_times = pd.DataFrame()
+        for filename in [self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH]:
+            local_mod_time = os.path.getmtime(filename)
+            local_mod_time = dt.datetime.fromtimestamp(local_mod_time)
+            
+            exists = self.da.getID(filename)
+            if exists:
+                remote_mod_time = self.da.file_mod_times[filename]
+            
+                mod_times = mod_times.append({'local':local_mod_time, 'remote':remote_mod_time, 'filename':filename}, ignore_index=True)
+            else:
+                mod_times = mod_times.append({'local':local_mod_time, 'filename':filename}, ignore_index=True)
+        
+        mod_times.remote = pd.to_datetime(mod_times.remote, errors='coerce')
+        
+        print(mod_times)
+        
         msg = widgets.QMessageBox()
         msg.setIcon(widgets.QMessageBox.Question)
         msg.setText("Would you like to download the database files from google drive?")

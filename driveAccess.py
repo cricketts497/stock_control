@@ -15,6 +15,7 @@ class DriveAccess(QObject):
         
         #dict to connect the filenames with file_ids
         self.file_ids = {}
+        self.file_mod_times = {}
         
         #connect with google drive to let the user log in
         flow = InstalledAppFlow.from_client_secrets_file(self.CREDENTIALS, self.SCOPES)
@@ -73,8 +74,11 @@ class DriveAccess(QObject):
             files = files.sort_values('time', ascending=False)
             
             self.file_ids[filename] = files.id.iloc[0]
+            self.file_mod_times[filename] = files.time.iloc[0]
             
             return True
+            
+    
         
     def pull(self, filename):
         """
