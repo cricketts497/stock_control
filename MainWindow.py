@@ -1,9 +1,11 @@
 import PyQt5.QtWidgets as widgets
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtCore import pyqtSignal as Signal
 import datetime as dt
 import pandas as pd
 from item import Item
+from driveAccess import DriveAccess
 
 class MainWindow(widgets.QTabWidget):
     STOCK_FILEPATH = "stock.csv" # path to the csv file containing the stock details: amounts prices descriptions etc.
@@ -15,11 +17,36 @@ class MainWindow(widgets.QTabWidget):
     EBAY_INTERNATIONAL_PROGRAMME_POSTCODES = ["WS13 8UR", "WS138UR"] # Postcodes of the ebay international programme address
     POSTAGE_COST = 0.88 # default absolute gbp cost of postage per order
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
+    
+    window_quit_signal = Signal()   
     def __init__(self):
         """
         Initialise the main GUI with the form for the order details, the first item form object and the order commiting button
         """
         super().__init__()
+
+        #init the drive file access and pull down the files
+        self.da = DriveAccess()
+        # stock, orders, stock_adding = self.da.pull_fileGroup([self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH])
+        # stock = stock.set_index('item_id')
+        # try:
+            # stock.to_csv(self.STOCK_FILEPATH)
+        # except PermissionError as err:
+            # self.show_save_failed_message('stock database', err)
+            
+        # orders = orders.set_index('postcode')
+        # try:
+            # orders.to_csv(self.ORDERS_FILEPATH)
+        # except PermissionError as err:
+            # self.show_save_failed_message('order database', err)
+
+        # stock_adding = stock_adding.set_index(['date', 'time'])
+        # try:
+            # stock_adding.to_csv(self.STOCK_ADDING_FILEPATH)
+        # except PermissionError as err:
+            # self.show_save_failed_message('stock input database', err)
+            
+            
 
         #if the order is international, we don't set the paypal default
         self.international_order = False
@@ -95,6 +122,31 @@ class MainWindow(widgets.QTabWidget):
         stock_commit_button.setFocusPolicy(Qt.ClickFocus)
         self.stockLayout.addWidget(stock_commit_button)        
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        
+    def closeEvent(self, event):
+        """
+        Override the closeEvent QWidget SLOT.
+        Ask the user if they want to upload the changes to the databases to google drive
+        
+        Arguments:
+            event: the close event to ignore
+        """
+        event.ignore()
+        
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Question)
+        msg.setText("Save to Drive?")
+        msg.setInformativeText("Clicking 'yes' will upload the changes to the databases to google drive.")
+        msg.setWindowTitle("Upload")
+        msg.setStandardButtons(widgets.QMessageBox.Yes | widgets.QMessageBox.No)
+        msg.buttonClicked.connect(self.closing_actions)
+        msg.exec_()
+        
+    def closing_actions(self, buttonPressed):
+        if buttonPressed.text() == "&Yes":
+            self.da.push_fileGroup([self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH])
+
+        self.window_quit_signal.emit()
         
     def create_top_order_form(self):
         """
@@ -317,7 +369,7 @@ class MainWindow(widgets.QTabWidget):
                     'postpack_amount':self.ppEdit.text()
                     }
                     
-            order['profit'] = float(order['order_amount']) - float(order['ebay_amount']) - float(order['paypal_amount']) - float(order['postpack_amount'])
+            # order['profit'] = float(order['order_amount']) - float(order['ebay_amount']) - float(order['paypal_amount']) - float(order['postpack_amount'])
             
             i = 1 # item number in order
             for item in self.items:
@@ -329,10 +381,12 @@ class MainWindow(widgets.QTabWidget):
                     #add the items to the order dict
                     order['item{}_id'.format(i)] = item.item_id
                     order['item{}_quantity'.format(i)] = quantity
+                    order['item{}_manufacturer'.format(i)] = item.item.loc['manufacturer']
+                    order['item{}_category'.format(i)] = item.item.loc['category']
                     
                     #calculate the outlay for the items and deduct from the profit
-                    out = quantity * float(stock.loc[item.item_id, 'price'])                
-                    order['profit'] -= out
+                    # out = quantity * float(stock.loc[item.item_id, 'price'])                
+                    # order['profit'] -= out
                     
                     i+=1
 

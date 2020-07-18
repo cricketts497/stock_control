@@ -6,6 +6,7 @@ def main():
     #setup the container
     app = QApplication(sys.argv)
     window = MainWindow()
+    window.window_quit_signal.connect(app.quit)
     window.show()
     sys.exit(app.exec_())
 

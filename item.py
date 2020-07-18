@@ -76,7 +76,8 @@ class Item(QObject):
 
         #set the description QLabel
         if len(item) > 0:
-            description = '{0} \nPrice: £{1:.2f}'.format(item.loc['description'], item.loc['price'])
+            # description = '{0} \nPrice: £{1:.2f}'.format(item.loc['description'], item.loc['price'])
+            description = '{0}, {1}'.format(item.loc['manufacturer'], item.loc['category'])
         elif self.item_id == self.NO_ITEM:
             description = ''
         else:

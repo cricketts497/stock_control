@@ -1,3 +1,8 @@
-,Unnamed: 0,postcode,date,order_amount,ebay_amount,paypal_amount,postpack_amount,item1_num,item1_quantity,profit,item2_num,item2_quantity
-0,0,M15 4PW,06/07/2020,100,10.0,3.2,0.97,123456d,4,79.83,,
-1,1,S72BY,05/07/2020,1000,100.0,29.3,0.97,mavic23,10,841.73,123456d,10.0
+postcode,date,order_amount,ebay_amount,paypal_amount,postpack_amount,item1_id,item1_quantity,item1_manufacturer,item1_category,item2_id,item2_quantity,item2_manufacturer,item2_category
+M15 4PW,06/07/2020,100,10.0,3.2,0.97,,4,,,,,,
+S72BY,05/07/2020,1000,100.0,29.3,0.97,,10,,,,10.0,,
+M204PE,17/07/2020,10,1.0,0.59,0.97,123456d,10,,,,,,
+M159PL,17/07/2020,10,1.0,0.59,0.97,123456d,1,,,,,,
+M159PL,17/07/2020,14,1.4,0.71,0.97,123456d,2,DT Swiss,competition,,,,
+M159PL,17/07/2020,14,1.4,0.71,0.97,123456d,2,DT Swiss,competition,mavic23,10.0,mavic,spoke key
+M159PW,17/07/2020,14,1.40,0.71,0.97,123456d,2,DT Swiss,competition,mavic23,10.0,mavic,spoke key
