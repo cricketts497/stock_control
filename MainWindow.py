@@ -340,6 +340,13 @@ class MainWindow(widgets.QTabWidget):
             self.stockItems[-1].get_item_signal.connect(self.get_stock_item)
             self.stockItemLayout.addWidget(self.stockItems[-1].widget)
         
+    def load_stock_database(self):
+        stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock.item_id = stock.item_id.astype(str)
+        stock.item_id = stock.item_id.apply(str.upper)
+        stock = stock.set_index('item_id')
+        
+        return stock
             
     def get_item_from_df(self, item_ID):
         """
@@ -348,9 +355,7 @@ class MainWindow(widgets.QTabWidget):
         Arguments:
             item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
-        stock = pd.read_csv(self.STOCK_FILEPATH)
-        stock.item_id = stock.item_id.apply(str.upper)
-        stock = stock.set_index('item_id')
+        stock = self.load_stock_database()
     
         try:
             item = stock.loc[item_ID]
@@ -368,9 +373,7 @@ class MainWindow(widgets.QTabWidget):
         
         SLOT connected to commit_button.clicked() SIGNAL in __init__()
         """
-        stock = pd.read_csv(self.STOCK_FILEPATH)
-        stock.item_id = stock.item_id.apply(str.upper)
-        stock = stock.set_index('item_id')
+        stock = self.load_stock_database()
         
         #check the order is valid
         order_ok = False
@@ -494,9 +497,7 @@ class MainWindow(widgets.QTabWidget):
         """
         For adding stock
         """
-        stock = pd.read_csv(self.STOCK_FILEPATH)
-        stock.item_id = stock.item_id.apply(str.upper)
-        stock = stock.set_index('item_id')
+        stock = self.load_stock_database()
         
         new_item = {item.item_id:False for item in self.stockItems}
         stock_ok = False
@@ -687,9 +688,7 @@ class MainWindow(widgets.QTabWidget):
             undo_ok = True
             
             orders = pd.read_csv(self.ORDERS_FILEPATH)
-            stock = pd.read_csv(self.STOCK_FILEPATH)
-            stock.item_id = stock.item_id.apply(str.upper)
-            stock = stock.set_index('item_id')
+            stock = self.load_stock_database()
             
             last_order = orders.iloc[-1]
             
@@ -792,9 +791,7 @@ class MainWindow(widgets.QTabWidget):
         if buttonPressed.text() == "&Yes":
             undo_ok = True
             stock_adds = pd.read_csv(self.STOCK_ADDING_FILEPATH)
-            stock = pd.read_csv(self.STOCK_FILEPATH)
-            stock.item_id = stock.item_id.apply(str.upper)
-            stock = stock.set_index('item_id')
+            stock = self.load_stock_database()
             
             last_add = stock_adds.iloc[-1]
             

@@ -35,8 +35,6 @@ class Item(QObject):
         #line edits only visible when putting new items into the stock database
         self.manufacturerEdit = widgets.QLineEdit()
         self.categoryEdit = widgets.QLineEdit()
-        self.manufacturerEdit.editingFinished.connect(self.setLower)
-        self.categoryEdit.editingFinished.connect(self.setLower)
         
         #GUI
         self.widget = widgets.QGroupBox("Item {}".format(item_number))
@@ -65,16 +63,6 @@ class Item(QObject):
         
         self.describe_label = widgets.QLabel()
         layout.addWidget(self.describe_label)
-        
-    def setLower(self):
-        """
-        Set the text in the manufacturer and category inputs to lower case
-        """
-        cat = str.lower(self.categoryEdit.text())
-        man = str.lower(self.manufacturerEdit.text())
-        
-        self.categoryEdit.setText(cat)
-        self.manufacturerEdit.setText(man)
         
     def get_item(self):
         """
