@@ -81,7 +81,10 @@ class Item(QObject):
         Emit a signal to the parent MainWindow to get the item with the given ID from the database
         SLOT connected to self.item_id_edit.editingFinished() SIGNAL
         """
-        self.item_id = self.item_id_edit.text()
+        text = self.item_id_edit.text()
+        self.item_id = str.upper(text)
+        
+        self.item_id_edit.setText(self.item_id)
         
         self.get_item_signal.emit(self.item_index, self.item_id)
     

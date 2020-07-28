@@ -349,6 +349,7 @@ class MainWindow(widgets.QTabWidget):
             item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
         """
         stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock.item_id = stock.item_id.apply(str.upper)
         stock = stock.set_index('item_id')
     
         try:
@@ -368,6 +369,7 @@ class MainWindow(widgets.QTabWidget):
         SLOT connected to commit_button.clicked() SIGNAL in __init__()
         """
         stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock.item_id = stock.item_id.apply(str.upper)
         stock = stock.set_index('item_id')
         
         #check the order is valid
@@ -493,6 +495,7 @@ class MainWindow(widgets.QTabWidget):
         For adding stock
         """
         stock = pd.read_csv(self.STOCK_FILEPATH)
+        stock.item_id = stock.item_id.apply(str.upper)
         stock = stock.set_index('item_id')
         
         new_item = {item.item_id:False for item in self.stockItems}
@@ -685,6 +688,7 @@ class MainWindow(widgets.QTabWidget):
             
             orders = pd.read_csv(self.ORDERS_FILEPATH)
             stock = pd.read_csv(self.STOCK_FILEPATH)
+            stock.item_id = stock.item_id.apply(str.upper)
             stock = stock.set_index('item_id')
             
             last_order = orders.iloc[-1]
@@ -789,6 +793,7 @@ class MainWindow(widgets.QTabWidget):
             undo_ok = True
             stock_adds = pd.read_csv(self.STOCK_ADDING_FILEPATH)
             stock = pd.read_csv(self.STOCK_FILEPATH)
+            stock.item_id = stock.item_id.apply(str.upper)
             stock = stock.set_index('item_id')
             
             last_add = stock_adds.iloc[-1]
