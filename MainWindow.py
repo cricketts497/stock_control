@@ -514,7 +514,7 @@ class MainWindow(widgets.QTabWidget):
                 try:
                     stock.loc[item.item_id, 'stock']
                 except KeyError:
-                    print('New item with id {}'.format(id))
+                    print('New item with id {}'.format(item.item_id))
                     new_item[item.item_id] = True
                     if item.manufacturerEdit.text() == item.NO_MANUFACTURER or item.categoryEdit.text() == item.NO_CATEGORY:
                         stock_ok = False
