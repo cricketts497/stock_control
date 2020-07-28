@@ -3,14 +3,14 @@ Form to simplify database stock management with ebay orders.
 
 ## Adding orders
 Orders detailing are added manually, including date, postcode and order amount. Default values are set for the ebay, paypal, and postage and packaging costs.
-Items are accessed via their unique `item_id` in the stock database, the current stock is checked to see if the order can be fulfilled.
+Items are accessed via their unique `item_id` in the stock database (these are case insensitive, characters are capitalised in the database), the current stock is checked to see if the order can be fulfilled.
 When orders are committed, they are added to an orders.csv database and the stock is deducted from the stock.csv database. Multiple items can be included in each order, the form expands automatically as you add more items.
 The last order can be removed using the undo button, this removes the order from the orders database and re-adds the stock.
 
 ![Order adding form](/images/order_form.png)
 
 ## Adding stock
-Stock can be added on the second tab with the same `item_id` values. The form expands automatically as you add items. The last stock add can be undone with the undo button.
+Stock can be added on the second tab with the same `item_id` values. The form expands automatically as you add items. When the stock add is commited, the stock is added to the stock.csv database and the details are added to stock_adding.csv. The last stock add can be undone with the undo button.
 
 ![Stock adding form](/images/stock_form.png)
 
