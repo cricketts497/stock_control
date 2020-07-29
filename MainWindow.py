@@ -6,6 +6,7 @@ import datetime as dt
 import pandas as pd
 import os
 from item import Item
+from searchTable import SearchTable
 from driveAccess import DriveAccess
 
 class MainWindow(widgets.QTabWidget):
@@ -19,6 +20,8 @@ class MainWindow(widgets.QTabWidget):
     POSTAGE_COST = 0.88 # default absolute gbp cost of postage per order
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
+    TEST = True
+    
     window_quit_signal = Signal()   
     def __init__(self):
         """
@@ -27,14 +30,22 @@ class MainWindow(widgets.QTabWidget):
         super().__init__()
 
         #init the drive file access and pull down the files
-        self.da = DriveAccess()
-        self.ask_pull()
+        if not self.TEST:
+            self.da = DriveAccess()
+            self.ask_pull()
 
         #if the order is international, we don't set the paypal default
         self.international_order = False
         
         #top bar title
         self.setWindowTitle("Stock Control")
+        
+        #Create the stock searching table
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        searchWidget = SearchTable(self.STOCK_FILEPATH)
+        searchWidget.save_error.connect(self.show_save_failed_message)
+        self.addTab(searchWidget, "Search stock")
+        #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     
         #create the order adding form
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
