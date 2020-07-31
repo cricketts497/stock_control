@@ -7,6 +7,7 @@ import numpy as np
 
 class SearchTable(widgets.QWidget):
     LOW_STOCK_LIMIT = 15 # limit for including in low stock get
+    NUM_ROWS = 500 # the number of rows in the table, note: this doesn't affect what is saved (as this is taken from self.frame), just what is shown in the table
     NO_FILENAME = ""
     save_error = Signal(str, PermissionError)
     def __init__(self, stock_filepath):
@@ -37,7 +38,7 @@ class SearchTable(widgets.QWidget):
         
         #add the table
         ###
-        self.table = widgets.QTableWidget(50,5)
+        self.table = widgets.QTableWidget(self.NUM_ROWS,5)
         self.table.setHorizontalHeaderItem(0, widgets.QTableWidgetItem("Item ID"))
         self.table.setHorizontalHeaderItem(1, widgets.QTableWidgetItem("Manufacturer"))
         self.table.setHorizontalHeaderItem(2, widgets.QTableWidgetItem("Category"))
