@@ -445,10 +445,7 @@ class MainWindow(widgets.QTabWidget):
                     order['item{}_manufacturer'.format(i)] = item.item.loc['manufacturer']
                     order['item{}_category'.format(i)] = item.item.loc['category']
                     
-                    #calculate the outlay for the items and deduct from the profit
-                    # out = quantity * float(stock.loc[item.item_id, 'price'])                
-                    # order['profit'] -= out
-                    
+                    # order['item{}_description'.
                     i+=1
 
             print(order)

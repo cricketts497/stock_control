@@ -1,13 +1,13 @@
-item_id,manufacturer,category,stock
-123456D,DT Swiss,competition,317
-MAVIC23,mavic,spoke key,338
-MAVICCOMP242,mavic,spoke,2
-MAVICCOMP244,mavic,spoke,10
-MAVICCOMP246,Mavic,Competition,77
-MAVICCOMP248,mavic ,competition,40
-MAVICCOMP244,mavic,,10
-MAVICCOMP250,mavic,competition,10
-MAVICCOMP255,mavic,competition,10
-MAVICCOMP260,mavic,mavic,0
-MAVICCOMP280,Mavic,Spoke,10
-93185389516,Mavic,Competition,10
+item_id,manufacturer,category,stock,description
+123456D,DT Swiss,competition,317,
+MAVIC23,mavic,spoke key,328,
+MAVICCOMP242,mavic,spoke,2,
+MAVICCOMP244,mavic,spoke,10,
+MAVICCOMP246,Mavic,Competition,77,
+MAVICCOMP248,mavic ,competition,40,
+MAVICCOMP244,mavic,,10,
+MAVICCOMP250,mavic,competition,10,
+MAVICCOMP255,mavic,competition,10,
+MAVICCOMP260,mavic,mavic,0,
+MAVICCOMP280,Mavic,Spoke,10,
+93185389516,Mavic,Competition,10,
