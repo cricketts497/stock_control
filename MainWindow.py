@@ -20,7 +20,9 @@ class MainWindow(widgets.QTabWidget):
     POSTAGE_COST = 0.88 # default absolute gbp cost of postage per order
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
+    ###
     TEST = True
+    ###
     
     window_quit_signal = Signal()   
     def __init__(self):

@@ -3,6 +3,7 @@ from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QIntValidator
 import pandas as pd
+import numpy as np
 
 class SearchTable(widgets.QWidget):
     LOW_STOCK_LIMIT = 15 # limit for including in low stock get
@@ -55,6 +56,9 @@ class SearchTable(widgets.QWidget):
         ###
         
     def load_stock_database(self):
+        """
+        Load the stock database using the filepath defined in self.__init__() from parent
+        """
         stock = pd.read_csv(self.STOCK_FILEPATH)
         stock.item_id = stock.item_id.astype(str)
         stock.item_id = stock.item_id.apply(str.upper)
@@ -63,9 +67,39 @@ class SearchTable(widgets.QWidget):
         return stock
         
     def search(self):
-        pass
+        """
+        Search for a number of terms separated by spaces
+        uses the pandas series.str.contains() function
+        fills the table with the returned values
+        
+        SLOT connected to self.searchEdit.editingFinished() SIGNAL in self.__init__()
+        """
+        stock = self.load_stock_database()
+        
+        term = self.searchEdit.text()
+        
+        terms = term.split(' ')
+        
+        output = pd.DataFrame()
+        for t in terms:
+            stock['term_in'] = stock.index.str.contains(t, na=False, case=False)
+            output = output.append(stock[stock.term_in == True])
+            for col in stock.columns:
+                try:
+                    stock['term_in'] = stock[col].str.contains(t, na=False, case=False)
+                except AttributeError:
+                    continue
+                output = output.append(stock[stock.term_in == True])
+        output = output.drop_duplicates()
+        output = output.drop('term_in', axis=1)
+        
+        self.populate_table(output)
         
     def get_low_stock(self):
+        """
+        Fill the table with items with stock less than self.LOW_STOCK_LIMIT
+        SLOT connected to lowStockButton.clicked() SIGNAL in self.__init__()
+        """
         stock = self.load_stock_database()
         
         stock = stock[stock.stock < self.LOW_STOCK_LIMIT]
@@ -73,7 +107,15 @@ class SearchTable(widgets.QWidget):
         self.populate_table(stock)
 
     def populate_table(self, frame):
+        """
+        Fill the self.table QTableWidget with data
+        
+        Arguments:
+            frame: pd.DataFrame, the data to fill the table with, containing keys 'manufacturer', 'category' and 'stock'
+        """
+        frame = frame.replace(np.nan, '') # empty cells for np.nan in the dataframe
         self.frame = frame
+        self.table.clearContents() # empty the table data but not the headers
         for index, row in enumerate(frame.iterrows()):
             self.table.setItem(index,0,widgets.QTableWidgetItem(row[0]))
             self.table.setItem(index,1,widgets.QTableWidgetItem(str(row[1]['manufacturer'])))
