@@ -3,13 +3,15 @@ from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QIntValidator
 import pandas as pd
+import numpy as np
 
 class Item(QObject):
     NO_ITEM = ""
     NO_MANUFACTURER = ""
     NO_CATEGORY = ""
+    NO_DESCRIPTION = ""
     BOX_HEIGHT = 100
-    NEW_ITEM_BOX_HEIGHT = 200
+    NEW_ITEM_BOX_HEIGHT = 220
 
     get_item_signal = Signal(int, str)
     def __init__(self, item_number, stock_item):
@@ -35,6 +37,7 @@ class Item(QObject):
         #line edits only visible when putting new items into the stock database
         self.manufacturerEdit = widgets.QLineEdit()
         self.categoryEdit = widgets.QLineEdit()
+        self.descriptionEdit = widgets.QLineEdit()
         
         #GUI
         self.widget = widgets.QGroupBox("Item {}".format(item_number))
@@ -84,12 +87,14 @@ class Item(QObject):
         Arguments:
             item: pd.Series(), Contains the items attributes, price, stock, description etc.
         """
+        item = item.fillna(self.NO_DESCRIPTION)
         self.item = item
-
+        
         #set the description QLabel
         if len(item) > 0:
-            # description = '{0} \nPrice: £{1:.2f}'.format(item.loc['description'], item.loc['price'])
             description = '{0}, {1}'.format(item.loc['manufacturer'], item.loc['category'])
+            if item.loc['description'] != self.NO_DESCRIPTION:
+                description += ', {}'.format(item.loc['description'])
         elif self.item_id == self.NO_ITEM:
             description = ''
         else:
@@ -108,6 +113,7 @@ class Item(QObject):
         if not self.form_expanded:
             self.form.addRow(widgets.QLabel('Manufacturer'), self.manufacturerEdit)
             self.form.addRow(widgets.QLabel('Category'), self.categoryEdit)
+            self.form.addRow(widgets.QLabel('Description'), self.descriptionEdit)
             self.widget.setFixedHeight(self.NEW_ITEM_BOX_HEIGHT)
             self.form_expanded = True
    
@@ -153,6 +159,7 @@ class Item(QObject):
         
         self.manufacturerEdit.setText(self.NO_MANUFACTURER)
         self.categoryEdit.setText(self.NO_CATEGORY)
+        self.descriptionEdit.setText(self.NO_DESCRIPTION)
         
         self.describe_label.setText("")
         

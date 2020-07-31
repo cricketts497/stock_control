@@ -37,11 +37,12 @@ class SearchTable(widgets.QWidget):
         
         #add the table
         ###
-        self.table = widgets.QTableWidget(50,4)
+        self.table = widgets.QTableWidget(50,5)
         self.table.setHorizontalHeaderItem(0, widgets.QTableWidgetItem("Item ID"))
         self.table.setHorizontalHeaderItem(1, widgets.QTableWidgetItem("Manufacturer"))
         self.table.setHorizontalHeaderItem(2, widgets.QTableWidgetItem("Category"))
         self.table.setHorizontalHeaderItem(3, widgets.QTableWidgetItem("Stock"))
+        self.table.setHorizontalHeaderItem(4, widgets.QTableWidgetItem("Description"))
         layout.addWidget(self.table)
         ###
         
@@ -121,6 +122,7 @@ class SearchTable(widgets.QWidget):
             self.table.setItem(index,1,widgets.QTableWidgetItem(str(row[1]['manufacturer'])))
             self.table.setItem(index,2,widgets.QTableWidgetItem(str(row[1]['category'])))
             self.table.setItem(index,3,widgets.QTableWidgetItem(str(row[1]['stock'])))
+            self.table.setItem(index,4,widgets.QTableWidgetItem(str(row[1]['description'])))
         
         
     def save_to_file(self):

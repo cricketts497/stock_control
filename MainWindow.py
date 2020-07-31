@@ -430,8 +430,6 @@ class MainWindow(widgets.QTabWidget):
                     'postpack_amount':self.ppEdit.text()
                     }
                     
-            # order['profit'] = float(order['order_amount']) - float(order['ebay_amount']) - float(order['paypal_amount']) - float(order['postpack_amount'])
-            
             i = 1 # item number in order
             for item in self.items:
                 if item.item_id != item.NO_ITEM:#item ID has been input
@@ -444,8 +442,8 @@ class MainWindow(widgets.QTabWidget):
                     order['item{}_quantity'.format(i)] = quantity
                     order['item{}_manufacturer'.format(i)] = item.item.loc['manufacturer']
                     order['item{}_category'.format(i)] = item.item.loc['category']
+                    order['item{}_description'.format(i)] = item.item.loc['description']
                     
-                    # order['item{}_description'.
                     i+=1
 
             print(order)
@@ -552,7 +550,10 @@ class MainWindow(widgets.QTabWidget):
                     quantity = int(item.quantityEdit.text())
                     
                     if new_item[item.item_id]:
-                        stock = stock.append(pd.Series({'stock':quantity, 'manufacturer':item.manufacturerEdit.text(), 'category':item.categoryEdit.text()}, name=item.item_id))
+                        stock = stock.append(pd.Series({'stock':quantity,
+                                                        'manufacturer':item.manufacturerEdit.text(),
+                                                        'category':item.categoryEdit.text(),
+                                                        'description':item.descriptionEdit.text()}, name=item.item_id))
                     else:
                         stock.loc[item.item_id, 'stock'] += quantity
                     
