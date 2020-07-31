@@ -1,6 +1,11 @@
 # Stock control GUI project
 Form to simplify database stock management with ebay orders.
 
+## Searching for items
+Items can be found in the stock database using the search field, by their id, manufacturer, category or description. Search terms can be separated by a space; any fields containing any of the terms are returned into the table. Items with low stock (Hard coded as 15 in searchTable.LOW_STOCK_LIMIT) can be returned with the button. The returned table data can be saved to csv.
+
+![Searching table](/images/search_form.png)
+
 ## Adding orders
 Orders detailing are added manually, including date, postcode and order amount. Default values are set for the ebay, paypal, and postage and packaging costs.
 Items are accessed via their unique `item_id` in the stock database (these are case insensitive, characters are capitalised in the database), the current stock is checked to see if the order can be fulfilled.
