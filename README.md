@@ -2,7 +2,7 @@
 Form to simplify database stock management with ebay orders.
 
 ## Searching for items
-Items can be found in the stock database using the search field, by their id, manufacturer, category or description. Search terms can be separated by a space; any fields containing any of the terms are returned into the table. Items with low stock (Hard coded as 15 in searchTable.LOW_STOCK_LIMIT) can be returned with the button. The returned table data can be saved to csv.
+Items can be found in the stock database using the search field, by their id, manufacturer, category or description. Search terms can be separated by a space; any fields containing any of the terms are returned into the table. Items with low stock (Hard coded as 15 in `searchTable.LOW_STOCK_LIMIT`) can be returned with the button. The returned table data can be saved to csv.
 
 ![Searching table](/images/search_form.png)
 
@@ -27,4 +27,4 @@ Stock can be added on the second tab with the same `item_id` values. The form ex
 5. `python main.py`
 
 ## Edits
-Filepaths and cost amounts can be edited in the class variables in MainWindow.py, the location of the google drive api credentials can be edited in driveAccess.py (DriveAccess.CREDENTIALS)
+Filepaths and cost amounts can be edited in the class variables in MainWindow.py, the location of the google drive api credentials can be edited in driveAccess.py (`DriveAccess.CREDENTIALS`)
