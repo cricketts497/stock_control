@@ -21,7 +21,7 @@ class MainWindow(widgets.QTabWidget):
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
     ###
-    TEST = False
+    TEST = True
     ###
     
     window_quit_signal = Signal()   
@@ -375,7 +375,27 @@ class MainWindow(widgets.QTabWidget):
         except KeyError:
             item = pd.Series()
             
+        #more than one item with the same id
+        if type(item) == pd.DataFrame:
+            self.show_not_unique_message(item_ID)
+            item = item.iloc[0]
+            
         return item
+    
+    def show_not_unique_message(self, item_ID):
+        """
+        More than one item was found in the database with the same ID
+        
+        Arguments:
+            item_ID: str, the ID with which multiple items were found
+        """
+        msg = widgets.QMessageBox()
+        msg.setIcon(widgets.QMessageBox.Warning)
+        msg.setText("ID not unique")
+        msg.setInformativeText("More than one item was found in the stock database with the id: {}.\nThe form cannot be submitted.".format(item_ID))
+        msg.setWindowTitle("ID not unique")
+        msg.setStandardButtons(widgets.QMessageBox.Ok)
+        msg.exec_()
         
     
     def order_done(self):
@@ -403,6 +423,12 @@ class MainWindow(widgets.QTabWidget):
                 try:
                     stock.loc[item.item_id, 'stock']
                 except KeyError:
+                    order_ok = False
+                    break
+                    
+                #check item is unique
+                if type(stock.loc[item.item_id]) == pd.DataFrame:
+                    self.show_not_unique_message(item.item_id)
                     order_ok = False
                     break
                 
@@ -521,6 +547,12 @@ class MainWindow(widgets.QTabWidget):
                 #check for the index, if it's not found this is a new item and we need to check the manufacturer and category values are set
                 try:
                     stock.loc[item.item_id, 'stock']
+                    
+                    #check the item is unique
+                    if type(stock.loc[item.item_id]) == pd.DataFrame:
+                        self.show_not_unique_message(item.item_id)
+                        stock_ok = False
+                        break
                 except KeyError:
                     print('New item with id {}'.format(item.item_id))
                     new_item[item.item_id] = True
