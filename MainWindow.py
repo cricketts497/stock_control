@@ -21,7 +21,7 @@ class MainWindow(widgets.QTabWidget):
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
     ###
-    TEST = True
+    TEST = False
     ###
     
     window_quit_signal = Signal()   
