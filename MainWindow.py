@@ -198,10 +198,11 @@ class MainWindow(widgets.QTabWidget):
         
     def closing_actions(self, buttonPressed):
         if buttonPressed.text() == "&Yes":
+            widgets.QApplication.setOverrideCursor(Qt.WaitCursor)
             for filename in [self.STOCK_FILEPATH, self.ORDERS_FILEPATH, self.STOCK_ADDING_FILEPATH]:
                 file_exists = self.da.getID(filename)
                 self.da.push(filename, new=not file_exists)
-
+            widgets.QApplication.restoreOverrideCursor()
         self.window_quit_signal.emit()
         
     def create_top_order_form(self):
