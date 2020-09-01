@@ -218,8 +218,7 @@ class MainWindow(widgets.QTabWidget):
         form = widgets.QFormLayout()
         
         #date input
-        today = dt.date.today()
-        yesterday = dt.date(today.year,  today.month, today.day-1 )
+        yesterday = dt.date.today() - dt.timedelta(days=1)
         self.dateEdit = widgets.QLineEdit("{:%d/%m/%Y}".format(yesterday))
         form.addRow(widgets.QLabel("Date"), self.dateEdit)
         
