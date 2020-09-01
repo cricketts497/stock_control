@@ -8,6 +8,7 @@ import os
 from item import Item
 from searchTable import SearchTable
 from driveAccess import DriveAccess
+from inputForm import InputForm
 
 class MainWindow(widgets.QTabWidget):
     STOCK_FILEPATH = "stock.csv" # path to the csv file containing the stock details: amounts prices descriptions etc.
@@ -21,7 +22,7 @@ class MainWindow(widgets.QTabWidget):
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
     ###
-    TEST = False
+    TEST = True
     ###
     
     window_quit_signal = Signal()   
@@ -51,71 +52,79 @@ class MainWindow(widgets.QTabWidget):
     
         #create the order adding form
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        orderWidget = widgets.QWidget()
-        self.orderLayout = widgets.QVBoxLayout()
-        orderWidget.setLayout(self.orderLayout)
+        self.orderWidget = InputForm(self.STOCK_FILEPATH, False)
+        # self.orderLayout = widgets.QVBoxLayout()
+        # orderWidget.setLayout(self.orderLayout)
 
-        self.addTab(orderWidget, "Add an order")
+        self.addTab(self.orderWidget, "Add an order")
         
         #undo button
-        undo_button = widgets.QPushButton("Undo last order")
-        undo_button.clicked.connect(self.undo_last_order)
-        undo_button.setFocusPolicy(Qt.ClickFocus)
-        self.orderLayout.addWidget(undo_button)
+        # undo_button = widgets.QPushButton("Undo last order")
+        # undo_button.clicked.connect(self.undo_last_order)
+        # undo_button.setFocusPolicy(Qt.ClickFocus)
+        # self.orderLayout.addWidget(undo_button)
+        self.orderWidget.undo_signal.connect(self.undo_last_order)
 
         #Add the order adding form
-        self.top_form = self.create_top_order_form()      
-        self.orderLayout.addLayout(self.top_form)
+        top_form = self.create_top_order_form()      
+        self.orderWidget.layout.addLayout(top_form)
         
         #add the first item form
-        self.itemLayout = widgets.QVBoxLayout()
+        # self.itemLayout = widgets.QVBoxLayout()
         
-        self.items = [Item(1, False)]
-        self.items[0].get_item_signal.connect(self.get_order_item)
-        self.itemLayout.addWidget(self.items[0].widget)
+        # self.items = [Item(1, False)]
+        # self.items[0].get_item_signal.connect(self.get_order_item)
+        # self.itemLayout.addWidget(self.items[0].widget)
+        self.orderWidget.addItemLayout()
         
-        self.orderLayout.addLayout(self.itemLayout)
+        # self.orderLayout.addLayout(self.itemLayout)
         
-        self.orderLayout.addStretch(1)
+        # self.orderLayout.addStretch(1)
         
         #Add a commit button
-        commit_button = widgets.QPushButton("Done")
-        commit_button.clicked.connect(self.order_done)
-        commit_button.setFocusPolicy(Qt.ClickFocus)
-        self.orderLayout.addWidget(commit_button)
+        # commit_button = widgets.QPushButton("Done")
+        # commit_button.clicked.connect(self.order_done)
+        # commit_button.setFocusPolicy(Qt.ClickFocus)
+        # self.orderLayout.addWidget(commit_button)
+        self.orderWidget.addCommitButton()
+        self.orderWidget.commit_signal.connect(self.order_done)
         
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         
         #create the stock adding form
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        stockWidget = widgets.QWidget()
-        self.stockLayout = widgets.QVBoxLayout()
-        stockWidget.setLayout(self.stockLayout)
+        self.stockWidget = InputForm(self.STOCK_FILEPATH, True)
+        # self.stockLayout = widgets.QVBoxLayout()
+        # stockWidget.setLayout(self.stockLayout)
         
-        self.addTab(stockWidget, "Add new stock")
+        self.addTab(self.stockWidget, "Add new stock")
         
         #undo button
-        stock_undo_button = widgets.QPushButton("Undo last stock add")
-        stock_undo_button.clicked.connect(self.undo_last_stock_add)
-        stock_undo_button.setFocusPolicy(Qt.ClickFocus)
-        self.stockLayout.addWidget(stock_undo_button)
+        # stock_undo_button = widgets.QPushButton("Undo last stock add")
+        # stock_undo_button.clicked.connect(self.undo_last_stock_add)
+        # stock_undo_button.setFocusPolicy(Qt.ClickFocus)
+        # self.stockLayout.addWidget(stock_undo_button)
+        self.stockWidget.undo_signal.connect(self.undo_last_stock_add)
         
         #Add an item object
-        self.stockItemLayout = widgets.QVBoxLayout()
+        # self.stockItemLayout = widgets.QVBoxLayout()
         
-        self.stockItems = [Item(1, True)]
-        self.stockItems[0].get_item_signal.connect(self.get_stock_item)
-        self.stockItemLayout.addWidget(self.stockItems[0].widget)
+        # self.stockItems = [Item(1, True)]
+        # self.stockItems[0].get_item_signal.connect(self.get_stock_item)
+        # self.stockItemLayout.addWidget(self.stockItems[0].widget)
         
-        self.stockLayout.addLayout(self.stockItemLayout)
+        # self.stockLayout.addLayout(self.stockItemLayout)
         
-        self.stockLayout.addStretch(1)
+        # self.stockLayout.addStretch(1)
+        self.stockWidget.addItemLayout()
         
         #add a commit button
-        stock_commit_button = widgets.QPushButton("Done")
-        stock_commit_button.clicked.connect(self.stock_done)
-        stock_commit_button.setFocusPolicy(Qt.ClickFocus)
-        self.stockLayout.addWidget(stock_commit_button)        
+        # stock_commit_button = widgets.QPushButton("Done")
+        # stock_commit_button.clicked.connect(self.stock_done)
+        # stock_commit_button.setFocusPolicy(Qt.ClickFocus)
+        # self.stockLayout.addWidget(stock_commit_button)      
+        self.stockWidget.addCommitButton()
+        self.stockWidget.commit_signal.connect(self.stock_done)
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         
     def ask_pull(self):
@@ -308,50 +317,50 @@ class MainWindow(widgets.QTabWidget):
             self.paypalCutEdit.setText('{:.2f}'.format(paypal_cut))
         
         
-    def get_order_item(self, edit_num, item_id):
-        """
-        Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
-        Add another item input to the form if this is the last
+    # def get_order_item(self, edit_num, item_id):
+        # """
+        # Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
+        # Add another item input to the form if this is the last
         
-        SLOT connected to item objects Item.get_item_signal() SIGNAL for order items
+        # SLOT connected to item objects Item.get_item_signal() SIGNAL for order items
         
-        Arguments:
-            edit_num: int, the zero-indexed index of the form item
-            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
-        """
-        item = self.get_item_from_df(item_id)
+        # Arguments:
+            # edit_num: int, the zero-indexed index of the form item
+            # item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
+        # """
+        # item = self.get_item_from_df(item_id)
         
-        #Set the item's item pandas series containing the description, price, stock etc
-        self.items[edit_num].set_item(item)
+        # #Set the item's item pandas series containing the description, price, stock etc
+        # self.items[edit_num].set_item(item)
         
-        #Add the next item input to the form if it is full
-        if len(self.items) == edit_num+1 and len(item) > 0:
-            self.items.append(Item(edit_num+2, False))
-            self.items[-1].get_item_signal.connect(self.get_order_item)
-            self.itemLayout.addWidget(self.items[-1].widget)
+        # #Add the next item input to the form if it is full
+        # if len(self.items) == edit_num+1 and len(item) > 0:
+            # self.items.append(Item(edit_num+2, False))
+            # self.items[-1].get_item_signal.connect(self.get_order_item)
+            # self.itemLayout.addWidget(self.items[-1].widget)
                 
-    def get_stock_item(self, edit_num, item_id):
-        """
-        Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
-        Add another item input to the form if this is the last
+    # def get_stock_item(self, edit_num, item_id):
+        # """
+        # Get the item series from the dataframe, then set the Item class's item object via Item.set_item()
+        # Add another item input to the form if this is the last
         
-        SLOT connected to item objects Item.get_item_signal() SIGNAL for stock items
+        # SLOT connected to item objects Item.get_item_signal() SIGNAL for stock items
         
-        Arguments:
-            edit_num: int, the zero-indexed index of the form item
-            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
-        """
+        # Arguments:
+            # edit_num: int, the zero-indexed index of the form item
+            # item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
+        # """
     
-        item = self.get_item_from_df(item_id)   
+        # item = self.get_item_from_df(item_id)   
         
-        #Set the item's item pandas series containing the description, price, stock etc
-        self.stockItems[edit_num].set_item(item)
+        # #Set the item's item pandas series containing the description, price, stock etc
+        # self.stockItems[edit_num].set_item(item)
         
-        #Add the next item input to the form if it is full
-        if len(self.stockItems) == edit_num+1 and self.stockItems[edit_num].item_id != self.stockItems[edit_num].NO_ITEM:
-            self.stockItems.append(Item(edit_num+2, True))
-            self.stockItems[-1].get_item_signal.connect(self.get_stock_item)
-            self.stockItemLayout.addWidget(self.stockItems[-1].widget)
+        # #Add the next item input to the form if it is full
+        # if len(self.stockItems) == edit_num+1 and self.stockItems[edit_num].item_id != self.stockItems[edit_num].NO_ITEM:
+            # self.stockItems.append(Item(edit_num+2, True))
+            # self.stockItems[-1].get_item_signal.connect(self.get_stock_item)
+            # self.stockItemLayout.addWidget(self.stockItems[-1].widget)
         
     def load_stock_database(self):
         stock = pd.read_csv(self.STOCK_FILEPATH)
@@ -361,41 +370,41 @@ class MainWindow(widgets.QTabWidget):
         
         return stock
             
-    def get_item_from_df(self, item_ID):
-        """
-        Load the stock csv file and look for the item with a given ID number
+    # def get_item_from_df(self, item_ID):
+        # """
+        # Load the stock csv file and look for the item with a given ID number
         
-        Arguments:
-            item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
-        """
-        stock = self.load_stock_database()
+        # Arguments:
+            # item_num: str, the alpha-numeric unique identifier of the item to be sold in the self.STOCK_FILEPATH database
+        # """
+        # stock = self.load_stock_database()
     
-        try:
-            item = stock.loc[item_ID]
-        except KeyError:
-            item = pd.Series()
+        # try:
+            # item = stock.loc[item_ID]
+        # except KeyError:
+            # item = pd.Series()
             
-        #more than one item with the same id
-        if type(item) == pd.DataFrame:
-            self.show_not_unique_message(item_ID)
-            item = item.iloc[0]
+        # #more than one item with the same id
+        # if type(item) == pd.DataFrame:
+            # self.show_not_unique_message(item_ID)
+            # item = item.iloc[0]
             
-        return item
+        # return item
     
-    def show_not_unique_message(self, item_ID):
-        """
-        More than one item was found in the database with the same ID
+    # def show_not_unique_message(self, item_ID):
+        # """
+        # More than one item was found in the database with the same ID
         
-        Arguments:
-            item_ID: str, the ID with which multiple items were found
-        """
-        msg = widgets.QMessageBox()
-        msg.setIcon(widgets.QMessageBox.Warning)
-        msg.setText("ID not unique")
-        msg.setInformativeText("More than one item was found in the stock database with the id: {}.\nThe form cannot be submitted.".format(item_ID))
-        msg.setWindowTitle("ID not unique")
-        msg.setStandardButtons(widgets.QMessageBox.Ok)
-        msg.exec_()
+        # Arguments:
+            # item_ID: str, the ID with which multiple items were found
+        # """
+        # msg = widgets.QMessageBox()
+        # msg.setIcon(widgets.QMessageBox.Warning)
+        # msg.setText("ID not unique")
+        # msg.setInformativeText("More than one item was found in the stock database with the id: {}.\nThe form cannot be submitted.".format(item_ID))
+        # msg.setWindowTitle("ID not unique")
+        # msg.setStandardButtons(widgets.QMessageBox.Ok)
+        # msg.exec_()
         
     
     def order_done(self):
@@ -410,7 +419,7 @@ class MainWindow(widgets.QTabWidget):
         
         #check the order is valid
         order_ok = False
-        for item in self.items:
+        for item in self.orderWidget.items:
             if item.item_id != item.NO_ITEM:#item ID has been input
                 #check the quantity is set
                 try:
@@ -457,7 +466,7 @@ class MainWindow(widgets.QTabWidget):
                     }
                     
             i = 1 # item number in order
-            for item in self.items:
+            for item in self.orderWidget.items:
                 if item.item_id != item.NO_ITEM:#item ID has been input
                     # deduct the quantity from the stock line
                     quantity = int(item.quantityEdit.text())
@@ -533,9 +542,9 @@ class MainWindow(widgets.QTabWidget):
         """
         stock = self.load_stock_database()
         
-        new_item = {item.item_id:False for item in self.stockItems}
+        new_item = {item.item_id:False for item in self.stockWidget.items}
         stock_ok = False
-        for item in self.stockItems:
+        for item in self.stockWidget.items:
             if item.item_id != item.NO_ITEM:#item ID has been input
                 #check the quantity is set
                 try:
@@ -576,7 +585,7 @@ class MainWindow(widgets.QTabWidget):
                         }
             
             item_num = 1
-            for item in self.stockItems:
+            for item in self.stockWidget.items:
                 if item.item_id != item.NO_ITEM:#item ID has been input
                     # add the quantity from the stock line
                     quantity = int(item.quantityEdit.text())
@@ -682,9 +691,9 @@ class MainWindow(widgets.QTabWidget):
             
             self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
             
-            #items
-            for item in self.items:
-                item.clear_form()
+            self.orderWidget.clear_items()
+            # for item in self.items:
+                # item.clear_form()
             
     def new_stock_input(self, buttonPressed):
         """
@@ -696,8 +705,9 @@ class MainWindow(widgets.QTabWidget):
         if buttonPressed.text() == "&Yes":
             print("Clearing stock adding form")
             
-            for item in self.stockItems:
-                item.clear_form()
+            self.stockWidget.clear_items()
+            # for item in self.stockItems:
+                # item.clear_form()
         
         
     def undo_last_order(self):
