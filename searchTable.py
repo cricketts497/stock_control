@@ -60,11 +60,11 @@ class SearchTable(widgets.QWidget):
     def load_stock_database(self):
         """
         Load the stock database using the filepath defined in self.__init__() from parent
+        Don't set the index to the item id here
         """
         stock = pd.read_csv(self.STOCK_FILEPATH)
         stock.item_id = stock.item_id.astype(str)
         stock.item_id = stock.item_id.apply(str.upper)
-        stock = stock.set_index('item_id')
         
         return stock
         
@@ -84,8 +84,6 @@ class SearchTable(widgets.QWidget):
         
         output = pd.DataFrame()
         for t in terms:
-            stock['term_in'] = stock.index.str.contains(t, na=False, case=False)
-            output = output.append(stock[stock.term_in == True])
             for col in stock.columns:
                 try:
                     stock['term_in'] = stock[col].str.contains(t, na=False, case=False)
@@ -119,7 +117,7 @@ class SearchTable(widgets.QWidget):
         self.frame = frame
         self.table.clearContents() # empty the table data but not the headers
         for index, row in enumerate(frame.iterrows()):
-            self.table.setItem(index,0,widgets.QTableWidgetItem(row[0]))
+            self.table.setItem(index,0,widgets.QTableWidgetItem(str(row[1]['item_id'])))
             self.table.setItem(index,1,widgets.QTableWidgetItem(str(row[1]['manufacturer'])))
             self.table.setItem(index,2,widgets.QTableWidgetItem(str(row[1]['category'])))
             self.table.setItem(index,3,widgets.QTableWidgetItem(str(row[1]['stock'])))
@@ -129,6 +127,7 @@ class SearchTable(widgets.QWidget):
     def save_to_file(self):
         """
         Save the data contained in the table to a user-named csv file
+        Set the index to the item id for saving to remove the arbitrary index column
         """
         if len(self.frame) > 0:
             (name, type) = widgets.QFileDialog.getSaveFileName(self, caption="Save stock data", filter="*.csv")
@@ -136,8 +135,10 @@ class SearchTable(widgets.QWidget):
             if name == self.NO_FILENAME:
                 return
             
+            frame_to_save = self.frame.set_index('item_id')
+            
             try:
-                self.frame.to_csv(name)
+                frame_to_save.to_csv(name)
             except PermissionError as err:
                 self.save_error.emit(name, err)
         
