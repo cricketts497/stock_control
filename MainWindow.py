@@ -22,7 +22,7 @@ class MainWindow(widgets.QTabWidget):
     PACKING_COST = 0.09 # default absolute gbp cost of packing per order
     
     ###
-    TEST = True
+    TEST = False
     ###
     
     window_quit_signal = Signal()   
@@ -253,11 +253,11 @@ class MainWindow(widgets.QTabWidget):
         self.paypalCutEdit.setValidator(cost_val)
         form.addRow(widgets.QLabel("Paypal cut, £"), self.paypalCutEdit)
         
-        #Postage and packing
-        post_and_pack_cost_default = self.POSTAGE_COST + self.PACKING_COST
-        self.ppEdit = widgets.QLineEdit("{:.2f}".format(post_and_pack_cost_default))
-        self.ppEdit.setValidator(cost_val)
-        form.addRow(widgets.QLabel("P&P cost, £"), self.ppEdit)
+        # #Postage and packing
+        # post_and_pack_cost_default = self.POSTAGE_COST + self.PACKING_COST
+        # self.ppEdit = widgets.QLineEdit("{:.2f}".format(post_and_pack_cost_default))
+        # self.ppEdit.setValidator(cost_val)
+        # form.addRow(widgets.QLabel("P&P cost, £"), self.ppEdit)
         
         return form
         
@@ -461,8 +461,8 @@ class MainWindow(widgets.QTabWidget):
                     'postcode':self.postcodeEdit.text(),
                     'order_amount':self.orderAmountEdit.text(),
                     'ebay_amount':self.ebayCutEdit.text(),
-                    'paypal_amount':self.paypalCutEdit.text(),
-                    'postpack_amount':self.ppEdit.text()
+                    'paypal_amount':self.paypalCutEdit.text()
+                    # 'postpack_amount':self.ppEdit.text()
                     }
                     
             i = 1 # item number in order
@@ -689,7 +689,7 @@ class MainWindow(widgets.QTabWidget):
             self.ebayCutEdit.setText("")
             self.paypalCutEdit.setText("")
             
-            self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
+            # self.ppEdit.setText("{:.2f}".format(self.POSTAGE_COST+self.PACKING_COST))
             
             self.orderWidget.clear_items()
             # for item in self.items:
